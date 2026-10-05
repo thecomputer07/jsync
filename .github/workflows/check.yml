@@ -1,0 +1,23 @@
+# A ogni push e pull request: tipi, lint, test e bundle JS per iOS e Android.
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint src
+      - run: npm test --if-present
+      - name: Bundle iOS + Android
+        run: npx expo export --platform ios --platform android --output-dir /tmp/export
