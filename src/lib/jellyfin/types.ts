@@ -81,8 +81,24 @@ export interface BaseItem {
   SeriesPrimaryImageTag?: string;
   PrimaryImageAspectRatio?: number;
   UserData?: UserData;
+  Trickplay?: Record<string, Record<string, TrickplayResolution>>;
   MediaSources?: MediaSource[];
   MediaStreams?: MediaStream[];
+}
+
+export interface TrickplayResolution {
+  Width: number;
+  Height: number;
+  TileWidth: number;
+  TileHeight: number;
+  ThumbnailCount: number;
+  Interval: number; // ms fra un'anteprima e l'altra
+  Bandwidth?: number;
+}
+
+export interface TrickplayInfo extends TrickplayResolution {
+  itemId: string;
+  mediaSourceId: string;
 }
 
 export interface ItemsResult {

@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 
+import type { LangSetting } from '@/i18n';
+
 /** Un account = un utente su un server Jellyfin. Il token sta nel portachiavi, il resto in AsyncStorage. */
 export interface Account {
   id: string; // serverId:userId
@@ -75,6 +77,7 @@ export interface Settings {
   maxBitrate: number; // bit/s
   preferredAudioLang: string; // es. "ita", "jpn" — vuoto = predefinita del server
   preferredSubtitleLang: string;
+  language: LangSetting;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -85,6 +88,7 @@ export const DEFAULT_SETTINGS: Settings = {
   maxBitrate: 40_000_000,
   preferredAudioLang: '',
   preferredSubtitleLang: '',
+  language: 'auto',
 };
 
 export async function loadSettings(): Promise<Settings> {

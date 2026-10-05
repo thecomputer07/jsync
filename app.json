@@ -82,7 +82,9 @@
         {
           "androidTVBanner": "./assets/images/tv-banner.png"
         }
-      ]
+      ],
+      "expo-localization",
+      "react-native-google-cast"
     ],
     "experiments": {
       "typedRoutes": true,

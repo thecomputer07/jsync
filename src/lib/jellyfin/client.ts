@@ -1,7 +1,10 @@
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 
+import { t } from '@/i18n';
+
 import type {
+  TrickplayInfo,
   AuthResult,
   BaseItem,
   GroupInfo,
@@ -55,6 +58,15 @@ interface ClientInit {
   token?: string;
   userId?: string;
 }
+
+export type LibrarySort = 'SortName' | 'DateCreated' | 'ProductionYear' | 'CommunityRating' | 'Random';
+export interface LibraryFilters {
+  sort: LibrarySort;
+  unwatched: boolean;
+  favorites: boolean;
+  genreIds: string[];
+}
+export const DEFAULT_FILTERS: LibraryFilters = { sort: 'SortName', unwatched: false, favorites: false, genreIds: [] };
 
 type Query = Record<string, string | number | boolean | undefined | null | string[]>;
 
@@ -114,17 +126,17 @@ export class JellyfinClient {
       });
     } catch (e: any) {
       throw new JellyfinError(
-        e?.name === 'AbortError' ? 'Il server non risponde.' : 'Impossibile raggiungere il server.',
+        e?.name === 'AbortError' ? t('errors.serverTimeout') : t('errors.unreachable'),
         0,
       );
     } finally {
       clearTimeout(timer);
     }
     if (!res.ok) {
-      let msg = `Errore ${res.status}`;
-      if (res.status === 401) msg = 'Sessione scaduta o credenziali errate.';
-      else if (res.status === 403) msg = 'Non hai i permessi per questa operazione.';
-      else if (res.status === 404) msg = 'Non trovato sul server.';
+      let msg = t('errors.generic', { status: res.status });
+      if (res.status === 401) msg = t('errors.unauthorized');
+      else if (res.status === 403) msg = t('errors.forbidden');
+      else if (res.status === 404) msg = t('errors.notFound');
       throw new JellyfinError(msg, res.status);
     }
     if (res.status === 204) return undefined as T;
@@ -138,7 +150,7 @@ export class JellyfinClient {
   }
 
   private uid() {
-    if (!this.userId) throw new JellyfinError('Nessun utente collegato.', 401);
+    if (!this.userId) throw new JellyfinError(t('errors.noUser'), 401);
     return this.userId;
   }
 
@@ -292,7 +304,13 @@ export class JellyfinClient {
     });
   }
 
-  libraryItems(parentId: string, startIndex: number, limit: number, collectionType?: string) {
+  libraryItems(
+    parentId: string,
+    startIndex: number,
+    limit: number,
+    collectionType?: string,
+    f: LibraryFilters = DEFAULT_FILTERS,
+  ) {
     const types =
       collectionType === 'movies'
         ? 'Movie'
@@ -302,12 +320,15 @@ export class JellyfinClient {
             ? 'BoxSet'
             : 'Movie,Series,Video,BoxSet';
     // Nelle cartelle miste mai audio o libri: sopra elenchiamo solo tipi video.
+    const filters = [f.unwatched ? 'IsUnplayed' : '', f.favorites ? 'IsFavorite' : ''].filter(Boolean).join(',');
     return this.items({
       parentId,
       recursive: true,
       includeItemTypes: types,
-      sortBy: 'SortName',
-      sortOrder: 'Ascending',
+      sortBy: f.sort === 'SortName' ? 'SortName' : `${f.sort},SortName`,
+      sortOrder: f.sort === 'SortName' ? 'Ascending' : 'Descending',
+      filters: filters || undefined,
+      genreIds: f.genreIds.length ? f.genreIds.join('|') : undefined,
       startIndex,
       limit,
     });
@@ -341,6 +362,51 @@ export class JellyfinClient {
         limit,
         fields: JellyfinClient.FIELDS,
       },
+    });
+  }
+
+  setFavorite(itemId: string, favorite: boolean) {
+    return this.request<unknown>(favorite ? 'POST' : 'DELETE', `/UserFavoriteItems/${itemId}`, {
+      query: { userId: this.uid() },
+    });
+  }
+
+  favorites(limit = 30) {
+    return this.items({
+      recursive: true,
+      filters: 'IsFavorite',
+      includeItemTypes: 'Movie,Series,Episode,Video',
+      sortBy: 'DateCreated',
+      sortOrder: 'Descending',
+      limit,
+    });
+  }
+
+  genres(parentId: string) {
+    return this.request<ItemsResult>('GET', '/Genres', {
+      query: { userId: this.uid(), parentId, includeItemTypes: 'Movie,Series', sortBy: 'SortName' },
+    });
+  }
+
+  /** Info anteprime della barra (trickplay), se il server le ha generate. */
+  async trickplay(itemId: string): Promise<TrickplayInfo | null> {
+    const r = await this.items({ ids: itemId, fields: 'Trickplay' }).catch(() => null);
+    const tp = r?.Items?.[0]?.Trickplay;
+    if (!tp) return null;
+    const msId = Object.keys(tp)[0];
+    if (!msId) return null;
+    const widths = Object.keys(tp[msId]).map(Number).sort((a, b) => a - b);
+    // la più piccola sopra i 200 px basta per un'anteprima sul telefono
+    const w = widths.find((x) => x >= 200) ?? widths[widths.length - 1];
+    const info = tp[msId][String(w)];
+    if (!info) return null;
+    return { itemId, mediaSourceId: msId, ...info };
+  }
+
+  trickplayTileUrl(tp: TrickplayInfo, index: number) {
+    return this.url(`/Videos/${tp.itemId}/Trickplay/${tp.Width}/${index}.jpg`, {
+      mediaSourceId: tp.mediaSourceId,
+      ...this.tokenQuery(),
     });
   }
 

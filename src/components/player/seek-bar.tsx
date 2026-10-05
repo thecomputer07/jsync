@@ -7,8 +7,8 @@ import type { MediaSegment } from '@/lib/jellyfin/types';
 import { colors, font, tv } from '@/theme';
 
 /**
- * Barra di avanzamento: trascini e vedi l'anteprima del tempo, il seek parte al rilascio
- * (in gruppo un solo seek per tutti, non uno per ogni pixel).
+ * Barra di avanzamento: trascini e vedi l'anteprima (fotogramma + tempo), il seek parte
+ * al rilascio (in gruppo un solo seek per tutti, non uno per ogni pixel).
  * I segmenti intro/riassunto/titoli di coda sono segnati sulla barra.
  */
 export function SeekBar({
@@ -18,6 +18,8 @@ export function SeekBar({
   segments,
   onSeek,
   onScrubStart,
+  onScrubEnd,
+  renderPreview,
 }: {
   position: number;
   duration: number;
@@ -25,6 +27,8 @@ export function SeekBar({
   segments: MediaSegment[];
   onSeek: (seconds: number) => void;
   onScrubStart?: () => void;
+  onScrubEnd?: () => void;
+  renderPreview?: (seconds: number) => React.ReactNode;
 }) {
   const [width, setWidth] = useState(1);
   const [scrub, setScrub] = useState<number | null>(null);
@@ -44,16 +48,27 @@ export function SeekBar({
     .onEnd((e) => {
       onSeek(at(e.x));
     })
-    .onFinalize(() => setScrub(null));
+    .onFinalize(() => {
+      setScrub(null);
+      onScrubEnd?.();
+    });
   const tap = Gesture.Tap()
     .runOnJS(true)
     .onEnd((e) => onSeek(at(e.x)));
+
+  const PREVIEW_W = 180;
+  const previewLeft = Math.min(Math.max(pct * width - PREVIEW_W / 2, -40), width - PREVIEW_W + 40);
 
   return (
     <View style={styles.wrap}>
       <Text style={styles.time}>{formatDuration(pos)}</Text>
       <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
         <View style={styles.hit} onLayout={(e) => setWidth(Math.max(1, e.nativeEvent.layout.width))}>
+          {scrub != null && renderPreview ? (
+            <View pointerEvents="none" style={[styles.preview, { left: previewLeft, width: PREVIEW_W }]}>
+              {renderPreview(scrub)}
+            </View>
+          ) : null}
           <View style={styles.track}>
             <View style={[styles.buffer, { width: `${bufPct * 100}%` }]} />
             {duration > 0
@@ -79,6 +94,7 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   time: { color: '#fff', fontSize: font.sm, fontVariant: ['tabular-nums'], minWidth: tv ? 90 : 56, textAlign: 'center' },
   hit: { flex: 1, height: 36, justifyContent: 'center' },
+  preview: { position: 'absolute', bottom: 34, alignItems: 'center' },
   track: { height: tv ? 6 : 4, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.25)', overflow: 'hidden' },
   buffer: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.35)' },
   segment: { position: 'absolute', top: 0, bottom: 0, backgroundColor: 'rgba(236,72,153,0.55)' },

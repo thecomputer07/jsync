@@ -1,3 +1,5 @@
+import { t } from '@/i18n';
+
 import { JellyfinClient, secondsToTicks, ticksToSeconds } from '../jellyfin/client';
 import { parseServerDate } from '../jellyfin/dates';
 import type { JellyfinSocket, SocketMessage } from '../jellyfin/socket';
@@ -337,14 +339,14 @@ export class SyncPlayManager {
         this.time.start();
         this.time.resync();
         this.set({ group: g, state: g.State });
-        this.notice(`Sei nel gruppo «${g.GroupName}»`);
+        this.notice(t('syncplay.joined', { name: g.GroupName }));
         break;
       }
       case 'UserJoined': {
         const g = this.snap.group;
         // Lo stesso utente può essere nel gruppo da due dispositivi: si aggiunge, non si deduplica.
         if (g) this.set({ group: { ...g, Participants: [...(g.Participants ?? []), u.Data] } });
-        this.notice(`${u.Data} è entrato nel gruppo`);
+        this.notice(t('syncplay.userJoined', { name: u.Data }));
         break;
       }
       case 'UserLeft': {
@@ -355,12 +357,12 @@ export class SyncPlayManager {
           if (i >= 0) parts.splice(i, 1);
           this.set({ group: { ...g, Participants: parts } });
         }
-        this.notice(`${u.Data} è uscito dal gruppo`);
+        this.notice(t('syncplay.userLeft', { name: u.Data }));
         break;
       }
       case 'GroupLeft':
       case 'NotInGroup':
-        if (this.snap.group) this.notice('Sei uscito dal gruppo');
+        if (this.snap.group) this.notice(t('syncplay.left'));
         this.resetGroup();
         break;
       case 'StateUpdate':
@@ -370,16 +372,16 @@ export class SyncPlayManager {
         this.onPlayQueue(u.Data as PlayQueueUpdate);
         break;
       case 'GroupDoesNotExist':
-        this.notice('Il gruppo non esiste più.', 'error');
+        this.notice(t('syncplay.notExist'), 'error');
         break;
       case 'CreateGroupDenied':
-        this.notice('Il tuo account non può creare gruppi (permesso SyncPlay sul server).', 'error');
+        this.notice(t('syncplay.createDenied'), 'error');
         break;
       case 'JoinGroupDenied':
-        this.notice('Il tuo account non può entrare nei gruppi (permesso SyncPlay sul server).', 'error');
+        this.notice(t('syncplay.joinDenied'), 'error');
         break;
       case 'LibraryAccessDenied':
-        this.notice('Qualcuno nel gruppo non ha accesso a questo contenuto.', 'error');
+        this.notice(t('syncplay.libraryDenied'), 'error');
         break;
     }
   }

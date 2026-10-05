@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 
+import { t } from '@/i18n';
+
 import { JellyfinClient } from './client';
 import type { MediaSource, MediaStream } from './types';
 
@@ -9,7 +11,8 @@ import type { MediaSource, MediaStream } from './types';
  * - Android (ExoPlayer): legge MKV; AC3/EAC3 solo sulle TV (i telefoni di solito non hanno il decoder).
  * Quello che non è in lista lo converte Jellyfin.
  */
-export function buildDeviceProfile(opts: { maxBitrate: number; burnSubtitles: boolean }) {
+export function buildDeviceProfile(opts: { maxBitrate: number; burnSubtitles: boolean; cast?: boolean }) {
+  if (opts.cast) return castProfile(opts.maxBitrate);
   const ios = Platform.OS === 'ios';
   const tv = Platform.isTV;
 
@@ -58,6 +61,32 @@ export function buildDeviceProfile(opts: { maxBitrate: number; burnSubtitles: bo
   };
 }
 
+/** Chromecast (Default Media Receiver): MP4/HLS con H.264 + AAC, sottotitoli impressi. */
+function castProfile(maxBitrate: number) {
+  return {
+    Name: 'JSync Cast',
+    MaxStreamingBitrate: maxBitrate,
+    MaxStaticBitrate: maxBitrate,
+    DirectPlayProfiles: [{ Container: 'mp4,m4v', Type: 'Video', VideoCodec: 'h264', AudioCodec: 'aac,mp3' }],
+    TranscodingProfiles: [
+      {
+        Container: 'ts',
+        Type: 'Video',
+        VideoCodec: 'h264',
+        AudioCodec: 'aac',
+        Context: 'Streaming',
+        Protocol: 'hls',
+        MaxAudioChannels: '2',
+        MinSegments: 1,
+        BreakOnNonKeyFrames: true,
+      },
+    ],
+    ContainerProfiles: [],
+    CodecProfiles: [],
+    SubtitleProfiles: ['srt', 'subrip', 'ass', 'ssa', 'vtt', 'pgssub', 'dvdsub'].map((Format) => ({ Format, Method: 'Encode' })),
+  };
+}
+
 export type PlayMethod = 'DirectPlay' | 'DirectStream' | 'Transcode';
 
 export interface ResolvedStream {
@@ -87,25 +116,24 @@ export async function resolveStream(
     maxBitrate: number;
     burnSubtitles: boolean;
     mediaSourceId?: string;
+    cast?: boolean;
   },
 ): Promise<ResolvedStream> {
   const ask = async (subtitleIndex: number | undefined) => {
     const wants = subtitleIndex != null && subtitleIndex >= 0;
     const r = await client.playbackInfo(itemId, {
-      DeviceProfile: buildDeviceProfile({ maxBitrate: opts.maxBitrate, burnSubtitles: opts.burnSubtitles }),
+      DeviceProfile: buildDeviceProfile({ maxBitrate: opts.maxBitrate, burnSubtitles: opts.burnSubtitles, cast: opts.cast }),
       StartTimeTicks: opts.startTicks ?? 0,
       AudioStreamIndex: opts.audioIndex,
       SubtitleStreamIndex: subtitleIndex,
       MaxStreamingBitrate: opts.maxBitrate,
       MediaSourceId: opts.mediaSourceId,
       // Con sottotitoli attivi vogliamo l'HLS del server (rimux, non transcodifica se possibile).
-      EnableDirectPlay: !wants,
+      EnableDirectPlay: !wants && !opts.cast,
     });
     if (r.ErrorCode) {
       throw new Error(
-        r.ErrorCode === 'NotAllowed'
-          ? 'Il tuo account non può riprodurre questo contenuto.'
-          : `Il server non può riprodurre questo file (${r.ErrorCode}).`,
+        r.ErrorCode === 'NotAllowed' ? t('errors.notAllowed') : t('errors.cannotPlay', { code: r.ErrorCode }),
       );
     }
     return r;
@@ -122,7 +150,7 @@ export async function resolveStream(
   }
   const wantsSubs = chosenSub != null && chosenSub >= 0;
   const ms = info.MediaSources?.[0];
-  if (!ms) throw new Error('Nessuna sorgente riproducibile.');
+  if (!ms) throw new Error(t('errors.noSource'));
 
   const streams = ms.MediaStreams ?? [];
   const audioStreams = streams.filter((s) => s.Type === 'Audio');
@@ -155,7 +183,7 @@ export async function resolveStream(
       uri += `${uri.includes('?') ? '&' : '?'}ApiKey=${t}&api_key=${t}`;
     }
   } else {
-    throw new Error('Il server non offre un modo per riprodurre questo file su questo dispositivo.');
+    throw new Error(t('errors.noMethod'));
   }
 
   return {
@@ -172,5 +200,5 @@ export async function resolveStream(
 }
 
 export function streamLabel(s: MediaStream) {
-  return s.DisplayTitle || [s.Language?.toUpperCase(), s.Codec?.toUpperCase()].filter(Boolean).join(' · ') || `Traccia ${s.Index}`;
+  return s.DisplayTitle || [s.Language?.toUpperCase(), s.Codec?.toUpperCase()].filter(Boolean).join(' · ') || t('player.track', { n: s.Index });
 }

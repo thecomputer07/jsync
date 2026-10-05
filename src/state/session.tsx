@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { setLanguage, t } from '@/i18n';
 import { JellyfinClient, JellyfinError, candidateServerUrls, normalizeServerUrl } from '@/lib/jellyfin/client';
 import { JellyfinSocket } from '@/lib/jellyfin/socket';
 import type { AuthResult, PublicSystemInfo } from '@/lib/jellyfin/types';
@@ -38,6 +39,8 @@ interface Session {
   findAccountForServer: (server: string) => StoredAccount | undefined;
 }
 
+class OldServerError extends Error {}
+
 const Ctx = createContext<Session | null>(null);
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
@@ -55,6 +58,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setAccounts(accounts);
         setActiveId(activeId);
         setSettings(s);
+        setLanguage(s.language);
       } finally {
         setReady(true);
       }
@@ -96,6 +100,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const updateSettings = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
+      if (patch.language) setLanguage(patch.language);
       saveSettings(next).catch(() => {});
       return next;
     });
@@ -103,7 +108,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const probeServer = useCallback(async (input: string) => {
     const urls = candidateServerUrls(input);
-    if (!urls.length) throw new Error('Scrivi l’indirizzo del server.');
+    if (!urls.length) throw new Error(t('errors.typeAddress'));
     let lastErr: unknown = null;
     for (const url of urls) {
       try {
@@ -111,18 +116,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         if (info?.Id && info?.Version) {
           const [maj, min] = info.Version.split('.').map(Number);
           if (maj < 10 || (maj === 10 && min < 9)) {
-            throw new Error(`Il server ha Jellyfin ${info.Version}: serve la 10.9 o successiva.`);
+            throw new OldServerError(t('errors.oldServer', { version: info.Version }));
           }
           return { url, info };
         }
       } catch (e) {
         lastErr = e;
-        if (e instanceof Error && e.message.startsWith('Il server ha Jellyfin')) throw e;
+        if (e instanceof OldServerError) throw e;
       }
     }
     throw lastErr instanceof JellyfinError || lastErr instanceof Error
-      ? new Error('Nessun server Jellyfin a questo indirizzo. Controlla indirizzo e porta (di solito 8096).')
-      : new Error('Server non raggiungibile.');
+      ? new Error(t('errors.noServerHere'))
+      : new Error(t('errors.serverUnreachable'));
   }, []);
 
   const completeLogin = useCallback(
