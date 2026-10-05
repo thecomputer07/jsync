@@ -1,11 +1,11 @@
 import * as Linking from 'expo-linking';
 
 /**
- * Invito a un gruppo. Nessun server di Rave in mezzo: il link contiene solo
+ * Invito a un gruppo. Nessun server di JSync in mezzo: il link contiene solo
  * l'indirizzo del server Jellyfin e l'id del gruppo SyncPlay. Chi lo apre entra
  * col proprio account di quel server.
  *
- *   rave://join?s=<url server>&g=<id gruppo>&n=<nome gruppo>
+ *   jsync://join?s=<url server>&g=<id gruppo>&n=<nome gruppo>
  */
 export interface Invite {
   server: string;
@@ -16,22 +16,22 @@ export interface Invite {
 export function buildInviteLink(inv: Invite) {
   const q = new URLSearchParams({ s: inv.server, g: inv.groupId });
   if (inv.groupName) q.set('n', inv.groupName);
-  return `rave://join?${q.toString()}`;
+  return `jsync://join?${q.toString()}`;
 }
 
 export function buildInviteMessage(inv: Invite, from?: string) {
   const link = buildInviteLink(inv);
   return (
-    `${from ? `${from} ti invita` : 'Sei invitato'} a guardare insieme su Rave` +
+    `${from ? `${from} ti invita` : 'Sei invitato'} a guardare insieme su JSync` +
     (inv.groupName ? ` nel gruppo «${inv.groupName}»` : '') +
-    `.\n\nApri il link con l'app Rave:\n${link}\n\n` +
+    `.\n\nApri il link con l'app JSync:\n${link}\n\n` +
     `Server Jellyfin: ${inv.server}\n(Serve un account su quel server.)`
   );
 }
 
-/** Accetta il link rave://, un testo che lo contiene, o il QR. */
+/** Accetta il link jsync:// (o il vecchio rave://), un testo che lo contiene, o il QR. */
 export function parseInvite(text: string): Invite | null {
-  const m = text.match(/rave:\/\/join\?[^\s]+/i);
+  const m = text.match(/(?:jsync|rave):\/\/join\?[^\s]+/i);
   if (!m) return null;
   try {
     const parsed = Linking.parse(m[0]);

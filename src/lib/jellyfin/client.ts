@@ -12,7 +12,7 @@ import type {
   UserDto,
 } from './types';
 
-export const APP_NAME = 'Rave';
+export const APP_NAME = 'JSync';
 export const APP_VERSION = '1.0.0';
 
 export const TICKS_PER_SECOND = 10_000_000;

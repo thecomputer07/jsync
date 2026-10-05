@@ -1,21 +1,21 @@
 {
   "expo": {
-    "name": "Rave",
+    "name": "JSync",
     "slug": "rave",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
-    "scheme": "rave",
+    "scheme": "jsync",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#07070A",
     "ios": {
-      "bundleIdentifier": "com.thecomputer07.rave",
+      "bundleIdentifier": "com.thecomputer07.jsync",
       "supportsTablet": true,
       "requireFullScreen": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "Rave usa la fotocamera solo per leggere il codice QR di un invito a un gruppo.",
-        "NSLocalNetworkUsageDescription": "Rave si collega al tuo server Jellyfin, che può trovarsi nella tua rete locale.",
+        "NSCameraUsageDescription": "JSync usa la fotocamera solo per leggere il codice QR di un invito a un gruppo.",
+        "NSLocalNetworkUsageDescription": "JSync si collega al tuo server Jellyfin, che può trovarsi nella tua rete locale.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true
@@ -26,7 +26,7 @@
       }
     },
     "android": {
-      "package": "com.thecomputer07.rave",
+      "package": "com.thecomputer07.jsync",
       "adaptiveIcon": {
         "backgroundColor": "#07070A",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -63,7 +63,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Rave usa la fotocamera solo per leggere il codice QR di un invito a un gruppo.",
+          "cameraPermission": "JSync usa la fotocamera solo per leggere il codice QR di un invito a un gruppo.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }

@@ -115,7 +115,7 @@ export default function SettingsScreen() {
 
       <Section title="Informazioni">
         <Text style={styles.hint}>
-          Rave {APP_VERSION}. Un player per il tuo server Jellyfin: nessun account Rave, nessun server di terze parti, nessun
+          JSync {APP_VERSION} — Sync your films. Un player per il tuo server Jellyfin: nessun account JSync, nessun server di terze parti, nessun
           tracciamento. I dati restano fra questo dispositivo e il tuo server.
         </Text>
       </Section>

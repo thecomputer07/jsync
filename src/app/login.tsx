@@ -133,7 +133,7 @@ export default function Login() {
               <Text style={styles.qcTitle}>Codice Quick Connect</Text>
               <Text style={styles.qcCode}>{qcCode}</Text>
               <Text style={styles.qcHelp}>
-                Da un dispositivo già collegato apri Jellyfin (o Rave → Impostazioni → Autorizza un dispositivo) e inserisci
+                Da un dispositivo già collegato apri Jellyfin (o JSync → Impostazioni → Autorizza un dispositivo) e inserisci
                 questo codice. Si entra da solo appena lo confermi.
               </Text>
               <Button title="Annulla" variant="ghost" onPress={() => {

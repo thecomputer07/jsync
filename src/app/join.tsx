@@ -8,7 +8,7 @@ import { useSession } from '@/state/session';
 import { colors, font, space } from '@/theme';
 
 /**
- * Apertura di un invito (rave://join?s=…&g=…&n=…).
+ * Apertura di un invito (jsync://join?s=…&g=…&n=…).
  * - stesso server dell'account attivo → entra nel gruppo
  * - server di un altro account salvato → cambia account e entra
  * - server mai visto → chiede di accedere, poi entra da solo

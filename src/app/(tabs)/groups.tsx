@@ -125,7 +125,7 @@ export default function Groups() {
               />
               <Text style={styles.hint}>
                 {tv
-                  ? 'Inquadra il QR con la fotocamera del telefono (app Rave → Gruppi → Scansiona).'
+                  ? 'Inquadra il QR con la fotocamera del telefono (app JSync → Gruppi → Scansiona).'
                   : 'Chi riceve l’invito deve avere un account su questo server.'}
               </Text>
             </View>
@@ -149,7 +149,7 @@ export default function Groups() {
               icon={<Ionicons name="add" size={20} color={colors.text} />}
               loading={busy === 'create'}
               hasTVPreferredFocus={tv}
-              onPress={() => run('create', () => syncplay!.create(name.trim() || `Serata di ${account?.userName ?? 'Rave'}`))}
+              onPress={() => run('create', () => syncplay!.create(name.trim() || `Serata di ${account?.userName ?? 'JSync'}`))}
             />
           </View>
 
@@ -182,7 +182,7 @@ export default function Groups() {
                 onPress={() => router.push('/scan')}
               />
             ) : null}
-            <Input placeholder="Incolla qui il link rave://…" value={paste} onChangeText={setPaste} autoCapitalize="none" />
+            <Input placeholder="Incolla qui il link jsync://…" value={paste} onChangeText={setPaste} autoCapitalize="none" />
             <View style={{ flexDirection: 'row', gap: space.sm }}>
               {Platform.OS !== 'web' && !tv ? (
                 <Button
@@ -198,7 +198,7 @@ export default function Groups() {
                 disabled={!paste.trim()}
                 onPress={() => {
                   const inv = parseInvite(paste);
-                  if (!inv) return toast('Non è un invito Rave valido.', 'error');
+                  if (!inv) return toast('Non è un invito JSync valido.', 'error');
                   router.push({ pathname: '/join', params: { s: inv.server, g: inv.groupId, n: inv.groupName } });
                 }}
               />

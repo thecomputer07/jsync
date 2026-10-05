@@ -34,7 +34,7 @@ export function buildDeviceProfile(opts: { maxBitrate: number; burnSubtitles: bo
       ];
 
   return {
-    Name: `Rave ${Platform.OS}${tv ? ' TV' : ''}`,
+    Name: `JSync ${Platform.OS}${tv ? ' TV' : ''}`,
     MaxStreamingBitrate: opts.maxBitrate,
     MaxStaticBitrate: opts.maxBitrate,
     MusicStreamingTranscodingBitrate: 384000,

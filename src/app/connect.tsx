@@ -39,7 +39,8 @@ export default function Connect() {
           <ScrollView contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
             <View style={styles.brand}>
               <Image source={require('@/assets/images/splash-icon.png')} style={styles.logo} contentFit="contain" />
-              <Text style={styles.title}>Rave</Text>
+              <Text style={styles.title}>JSync</Text>
+              <Text style={styles.tagline}>Sync your films</Text>
               <Text style={styles.subtitle}>
                 Guarda film e serie del tuo server Jellyfin, da solo o insieme agli amici, perfettamente sincronizzati.
               </Text>
@@ -80,7 +81,7 @@ export default function Connect() {
             </View>
 
             <Text style={styles.note}>
-              Rave non ha server propri e non raccoglie dati: si collega solo al server Jellyfin che inserisci tu.
+              JSync non ha server propri e non raccoglie dati: si collega solo al server Jellyfin che inserisci tu.
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -102,6 +103,7 @@ const styles = StyleSheet.create({
   brand: { alignItems: 'center', gap: space.sm },
   logo: { width: tv ? 140 : 96, height: tv ? 140 : 96 },
   title: { color: colors.text, fontSize: font.hero, fontWeight: '900', letterSpacing: -0.5 },
+  tagline: { color: colors.accent, fontSize: font.md, fontWeight: '800', letterSpacing: 0.5, marginTop: -4 },
   subtitle: { color: colors.textDim, fontSize: font.md, textAlign: 'center', lineHeight: font.md * 1.4 },
   form: { gap: space.md },
   error: { color: colors.danger, fontSize: font.sm },

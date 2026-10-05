@@ -1,10 +1,12 @@
-# Rave — player Jellyfin per guardare insieme
+# JSync — Sync your films
+
+Player Jellyfin per guardare insieme. (Nome di lavoro iniziale: Rave.)
 
 App React Native (Expo SDK 57) per **iPhone, Android e Android TV**. Ognuno inserisce il proprio server
 Jellyfin, accede col proprio account e guarda **film e serie TV** da solo o in **gruppo**, sincronizzato
 al millisecondo con gli altri.
 
-**Non c'è nessun server di Rave.** L'app parla solo col Jellyfin dell'utente. I gruppi sono i gruppi
+**Non c'è nessun server di JSync.** L'app parla solo col Jellyfin dell'utente. I gruppi sono i gruppi
 **SyncPlay** nativi di quel server, e progressi, "continua a guardare" e "salta intro" vivono anch'essi lì.
 Niente da ospitare né da mantenere: si pubblica sugli store e basta.
 
@@ -20,7 +22,7 @@ Musica, libri, audiolibri, foto e TV in diretta sono esclusi apposta: si vedono 
   **salta intro e riassunto** (Media Segments di Jellyfin 10.10+ o plugin Intro Skipper), **prossimo
   episodio** con conto alla rovescia, orizzontale bloccato, barre di sistema nascoste.
 - **Gruppi**: crea, entra, partecipanti; in gruppo play, pausa, salti e prossimo episodio valgono per tutti.
-  **Inviti** tramite link `rave://join?...` condiviso da WhatsApp e simili, QR (anche mostrato sulla TV),
+  **Inviti** tramite link `jsync://join?...` condiviso da WhatsApp e simili, QR (anche mostrato sulla TV),
   scansione QR o incolla link. Chi apre l'invito entra col **suo** account di quel server.
 - **Android TV**: focus del telecomando su ogni elemento, D-pad nel player (sinistra/destra = ±10 s),
   tasti multimediali, banner del launcher.
@@ -56,8 +58,9 @@ per tornare al React Native standard.
 
 ## Prima di pubblicare sugli store
 
-- **Nome**: "Rave" è già il nome di un'app di watch party molto nota ("Rave – Watch Party").
-  Serve un nome diverso per evitare il rifiuto o un reclamo per il marchio.
+- **Nome**: **JSync**, sottotitolo "Sync your films". Scartati: "Rave" (esiste già "Rave – Watch Party"),
+  "rsync" (è un protocollo noto, e `rsync://` è già il suo schema), "JPlayer" (già un lettore video
+  sull'App Store e su Google Play). Il nome va prenotato in App Store Connect appena c'è l'account.
 - **Revisione Apple**: ai revisori va dato un server di prova. Va bene quello demo pubblico di
   Jellyfin (`https://demo.jellyfin.org/stable`, utente `demo`, senza password), che l'app propone
   anche da un pulsante. Nelle note va spiegato che è un client per server personali, come Swiftfin
@@ -65,7 +68,8 @@ per tornare al React Native standard.
 - **Privacy**: l'app non raccoglie dati, quindi in App Store Connect si dichiara "Dati non raccolti".
   `NSAllowsArbitraryLoads` è attivo perché molti server Jellyfin sono in http su rete locale; ad Apple
   va motivato così.
-- **Bundle id** provvisorio: `com.thecomputer07.rave` (in `app.json`).
+- **Bundle id**: `com.thecomputer07.jsync`, schema inviti `jsync://`. Lo slug Expo resta `rave` (progetto
+  `@thecomputer07/rave` su expo.dev, invisibile agli utenti).
 
 ## Struttura
 

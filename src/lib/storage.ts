@@ -18,6 +18,7 @@ export interface StoredAccount extends Account {
   token: string;
 }
 
+// Chiavi interne nate quando l'app si chiamava Rave: non si rinominano (farebbe perdere i login).
 const ACCOUNTS_KEY = 'rave.accounts.v1';
 const ACTIVE_KEY = 'rave.active.v1';
 const SETTINGS_KEY = 'rave.settings.v1';
@@ -61,7 +62,7 @@ export async function setActiveAccount(id: string) {
  * ogni account ha quindi il suo DeviceId, fisso nel tempo.
  */
 export function newDeviceId() {
-  return `rave-${Crypto.randomUUID()}`;
+  return `jsync-${Crypto.randomUUID()}`;
 }
 
 // ── Impostazioni ──

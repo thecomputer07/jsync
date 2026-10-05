@@ -674,7 +674,7 @@ export default function PlayerScreen() {
 
 /**
  * Quanto questo dispositivo è lontano dalla linea temporale del gruppo (stimata dal server).
- * Ogni client Rave si allinea al server, non agli altri: se qui resti a pochi ms, sei in sync con tutti.
+ * Ogni client JSync si allinea al server, non agli altri: se qui resti a pochi ms, sei in sync con tutti.
  */
 function SyncBadge({ measuring, diffMs, syncing, state, ping }: { measuring: boolean; diffMs: number; syncing: string | null; state: string | null; ping: number }) {
   const abs = Math.abs(diffMs);
