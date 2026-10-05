@@ -140,7 +140,10 @@ export function MediaRow({
   kind?: 'poster' | 'landscape';
 }) {
   const { width } = useWindowDimensions();
-  if (!items?.length) return null;
+  // Jellyfin a volte restituisce lo stesso elemento due volte (es. "Aggiunti di recente"
+  // raggruppa gli episodi per serie): mostriamo ogni titolo una volta sola.
+  const unique = items?.filter((it, i, arr) => arr.findIndex((x) => x.Id === it.Id) === i);
+  if (!unique?.length) return null;
   const cardW =
     kind === 'poster'
       ? tv
@@ -154,7 +157,7 @@ export function MediaRow({
       <SectionTitle>{title}</SectionTitle>
       <FlatList
         horizontal
-        data={items}
+        data={unique}
         keyExtractor={(i) => i.Id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: space.lg, gap: space.md, paddingVertical: tv ? space.md : 0 }}
