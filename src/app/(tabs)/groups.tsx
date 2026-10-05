@@ -10,16 +10,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Focusable } from '@/components/focusable';
 import { toast } from '@/components/toast';
 import { Button, Input } from '@/components/ui';
+import { t as tr, useT, type TKey } from '@/i18n';
 import { buildInviteLink, buildInviteMessage, parseInvite } from '@/lib/invite';
 import { useClient, useSession, useSyncPlayState } from '@/state/session';
 import { colors, font, radius, space, tv } from '@/theme';
 
-const STATE_LABEL: Record<string, string> = {
-  Idle: 'In attesa di scegliere cosa guardare',
-  Waiting: 'Sincronizzazione in corso…',
-  Paused: 'In pausa',
-  Playing: 'In riproduzione',
+const STATE_KEY: Record<string, TKey> = {
+  Idle: 'groups.stateIdle',
+  Waiting: 'groups.stateWaiting',
+  Paused: 'groups.statePaused',
+  Playing: 'groups.statePlaying',
 };
+
+function stateLabel(state?: string | null) {
+  const k = STATE_KEY[state ?? 'Idle'];
+  return k ? tr(k) : (state ?? '');
+}
 
 export default function Groups() {
   const c = useClient();
@@ -29,6 +35,7 @@ export default function Groups() {
   const [name, setName] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [paste, setPaste] = useState('');
+  const { t } = useT();
 
   const list = useQuery({
     queryKey: ['groups', account?.id],
@@ -42,7 +49,7 @@ export default function Groups() {
       await fn();
     } catch (e: any) {
       toast(
-        e?.status === 403 ? 'Il tuo account non ha il permesso SyncPlay su questo server (lo abilita l’amministratore).' : (e?.message ?? 'Errore'),
+        e?.status === 403 ? t('groups.noPermission') : (e?.message ?? t('common.error')),
         'error',
       );
     } finally {
@@ -59,11 +66,8 @@ export default function Groups() {
       contentContainerStyle={[styles.wrap, { paddingTop: insets.top + space.lg }]}
       keyboardShouldPersistTaps="handled"
       refreshControl={tv ? undefined : <RefreshControl refreshing={list.isRefetching} onRefresh={() => list.refetch()} tintColor={colors.text} />}>
-      <Text style={styles.h1}>Guarda insieme</Text>
-      <Text style={styles.lead}>
-        I gruppi vivono sul tuo server Jellyfin ({account?.serverName}). Chi entra vede la stessa cosa nello stesso istante:
-        pausa, salti e prossimo episodio valgono per tutti.
-      </Text>
+      <Text style={styles.h1}>{t('groups.title')}</Text>
+      <Text style={styles.lead}>{t('groups.lead', { server: account?.serverName ?? '' })}</Text>
 
       {sp.group && invite ? (
         <View style={styles.card}>
@@ -73,9 +77,9 @@ export default function Groups() {
               {sp.group.GroupName}
             </Text>
           </View>
-          <Text style={styles.state}>{STATE_LABEL[sp.state ?? 'Idle'] ?? sp.state}</Text>
+          <Text style={styles.state}>{stateLabel(sp.state)}</Text>
 
-          <Text style={styles.label}>Partecipanti</Text>
+          <Text style={styles.label}>{t('groups.participants')}</Text>
           <View style={styles.people}>
             {(sp.group.Participants ?? []).map((p, i) => (
               <View key={`${p}-${i}`} style={styles.person}>
@@ -84,7 +88,7 @@ export default function Groups() {
                 </View>
                 <Text style={styles.personName} numberOfLines={1}>
                   {p}
-                  {p === account?.userName ? ' (tu)' : ''}
+                  {p === account?.userName ? t('groups.you') : ''}
                 </Text>
               </View>
             ))}
@@ -92,16 +96,16 @@ export default function Groups() {
 
           {sp.current && !sp.following ? (
             <Button
-              title="Torna alla visione del gruppo"
+              title={t('groups.backToGroup')}
               icon={<Ionicons name="play" size={18} color={colors.text} />}
               onPress={() => syncplay?.rejoinPlayback()}
             />
           ) : null}
           {!sp.current ? (
-            <Text style={styles.hint}>Apri un film o un episodio e premi «Guarda nel gruppo» per avviarlo per tutti.</Text>
+            <Text style={styles.hint}>{t('groups.howToStart')}</Text>
           ) : null}
 
-          <Text style={[styles.label, { marginTop: space.md }]}>Invita</Text>
+          <Text style={[styles.label, { marginTop: space.md }]}>{t('groups.invite')}</Text>
           <View style={styles.inviteRow}>
             <View style={styles.qr}>
               <QRCode value={buildInviteLink(invite)} size={tv ? 220 : 132} backgroundColor="#fff" color="#000" />
@@ -109,96 +113,94 @@ export default function Groups() {
             <View style={{ flex: 1, gap: space.sm }}>
               {!tv ? (
                 <Button
-                  title="Condividi invito"
+                  title={t('groups.share')}
                   icon={<Ionicons name="share-outline" size={18} color={colors.text} />}
                   onPress={() => Share.share({ message: buildInviteMessage(invite, account?.userName) })}
                 />
               ) : null}
               <Button
-                title="Copia link"
+                title={t('groups.copy')}
                 variant="secondary"
                 icon={<Ionicons name="copy-outline" size={18} color={colors.text} />}
                 onPress={async () => {
                   await Clipboard.setStringAsync(buildInviteLink(invite));
-                  toast('Link copiato');
+                  toast(t('groups.copied'));
                 }}
               />
               <Text style={styles.hint}>
-                {tv
-                  ? 'Inquadra il QR con la fotocamera del telefono (app JSync → Gruppi → Scansiona).'
-                  : 'Chi riceve l’invito deve avere un account su questo server.'}
+                {tv ? t('groups.tvScan') : t('groups.needAccount')}
               </Text>
             </View>
           </View>
 
-          <Button title="Esci dal gruppo" variant="danger" loading={busy === 'leave'} onPress={() => run('leave', () => syncplay!.leave())} />
+          <Button title={t('groups.leave')} variant="danger" loading={busy === 'leave'} onPress={() => run('leave', () => syncplay!.leave())} />
         </View>
       ) : (
         <>
           <View style={styles.card}>
-            <Text style={styles.label}>Nuovo gruppo</Text>
+            <Text style={styles.label}>{t('groups.newGroup')}</Text>
             <Input
-              placeholder={`Serata di ${account?.userName ?? ''}`}
+              placeholder={t('groups.defaultName', { name: account?.userName ?? '' })}
               value={name}
               onChangeText={setName}
               returnKeyType="done"
               maxLength={40}
             />
             <Button
-              title="Crea gruppo"
+              title={t('groups.create')}
               icon={<Ionicons name="add" size={20} color={colors.text} />}
               loading={busy === 'create'}
               hasTVPreferredFocus={tv}
-              onPress={() => run('create', () => syncplay!.create(name.trim() || `Serata di ${account?.userName ?? 'JSync'}`))}
+              onPress={() => run('create', () => syncplay!.create(name.trim() || t('groups.defaultName', { name: account?.userName ?? 'JSync' })))}
             />
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Gruppi aperti su questo server</Text>
+            <Text style={styles.label}>{t('groups.open')}</Text>
             {list.data?.length ? (
               list.data.map((g) => (
                 <Focusable key={g.GroupId} style={styles.groupItem} zoom={false} onPress={() => run('join', () => syncplay!.join(g.GroupId))}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.groupItemName}>{g.GroupName}</Text>
                     <Text style={styles.groupItemMeta} numberOfLines={1}>
-                      {g.Participants?.join(', ')} · {STATE_LABEL[g.State] ?? g.State}
+                      {g.Participants?.join(', ')} · {stateLabel(g.State)}
                     </Text>
                   </View>
-                  <Text style={styles.join}>Entra</Text>
+                  <Text style={styles.join}>{t('groups.join')}</Text>
                 </Focusable>
               ))
             ) : (
-              <Text style={styles.hint}>{list.isLoading ? 'Caricamento…' : 'Nessun gruppo aperto in questo momento.'}</Text>
+              <Text style={styles.hint}>{list.isLoading ? t('common.loading') : t('groups.none')}</Text>
             )}
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.label}>Hai ricevuto un invito?</Text>
+            <Text style={styles.label}>{t('groups.gotInvite')}</Text>
             {!tv ? (
               <Button
-                title="Scansiona QR"
+                title={t('groups.scan')}
                 variant="secondary"
                 icon={<Ionicons name="qr-code-outline" size={18} color={colors.text} />}
                 onPress={() => router.push('/scan')}
               />
             ) : null}
-            <Input placeholder="Incolla qui il link jsync://…" value={paste} onChangeText={setPaste} autoCapitalize="none" />
+            <Input placeholder={t('groups.pastePh')} value={paste} onChangeText={setPaste} autoCapitalize="none" />
             <View style={{ flexDirection: 'row', gap: space.sm }}>
               {Platform.OS !== 'web' && !tv ? (
                 <Button
-                  title="Incolla"
+                  title={t('groups.paste')}
                   variant="secondary"
                   style={{ flex: 1 }}
                   onPress={async () => setPaste(await Clipboard.getStringAsync())}
                 />
               ) : null}
               <Button
-                title="Apri invito"
+                title={t('groups.openInvite')}
                 style={{ flex: 1 }}
                 disabled={!paste.trim()}
                 onPress={() => {
                   const inv = parseInvite(paste);
-                  if (!inv) return toast('Non è un invito JSync valido.', 'error');
+                  if (!inv) return toast(t('groups.badInvite'), 'error');
                   router.push({ pathname: '/join', params: { s: inv.server, g: inv.groupId, n: inv.groupName } });
                 }}
               />
@@ -211,7 +213,7 @@ export default function Groups() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: space.lg, paddingBottom: space.xxl * 2, gap: space.lg, maxWidth: tv ? 1100 : 700, width: '100%', alignSelf: 'center' },
+  wrap: { paddingHorizontal: space.lg, paddingBottom: space.xxl * 2, gap: space.lg, maxWidth: tv ? 1100 : 900, width: '100%', alignSelf: 'center' },
   h1: { color: colors.text, fontSize: font.xxl, fontWeight: '900' },
   lead: { color: colors.textDim, fontSize: font.sm, lineHeight: font.sm * 1.5 },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space.lg, gap: space.md, borderWidth: 1, borderColor: colors.border },

@@ -56,6 +56,31 @@ lo fa `scripts/use-tvos.js`, che EAS esegue prima dell'installazione (`eas-build
 `EXPO_TV=1`. In locale: `npm run tv:prebuild && npm run tv:android`, poi `git checkout package.json`
 per tornare al React Native standard.
 
+## Sito, privacy e inviti (GitHub Pages)
+
+La cartella `docs/` è pubblicata su **https://thecomputer07.github.io/jsync/**:
+- `docs/index.html`: pagina del progetto;
+- `docs/privacy/`: informativa privacy in inglese e italiano (il link da dare ad App Store e Google Play);
+- `docs/j/`: pagina degli inviti. Il link condiviso è `https://thecomputer07.github.io/jsync/j/#s=…&g=…&n=…`
+  ed è cliccabile ovunque. I dati stanno dopo il `#`, quindi il browser non li manda a nessun server; la
+  pagina apre l'app con `jsync://join?…`.
+
+## Build gratuite con GitHub Actions
+
+I workflow in `.github/workflows/` compilano sui runner di GitHub, gratuiti per i repo pubblici, con
+`eas build --local`, che **non consuma le build cloud di Expo**:
+- **Check** (a ogni push): tipi, lint e bundle JS iOS/Android.
+- **iOS build** (manuale, da Actions → Run workflow): `.ipa` firmato, e su richiesta invio a TestFlight.
+- **Android build** (manuale): APK (`preview`), AAB per Google Play (`production`) o APK per Android TV (`tv`).
+
+Configurazione una tantum:
+1. Segreto del repo `EXPO_TOKEN`: da expo.dev → Account settings → Access tokens.
+2. Credenziali di firma iOS su EAS: `npx eas-cli credentials -p ios` (login Apple, crea certificato e
+   provisioning). Per TestFlight serve anche la chiave API di App Store Connect, che si aggiunge lì.
+3. Per Android EAS genera il keystore alla prima build: `npx eas-cli credentials -p android`.
+
+In locale, sul PC con Android SDK e JDK 17: `npx expo run:android` (build di debug sull'emulatore).
+
 ## Prima di pubblicare sugli store
 
 - **Nome**: **JSync**, sottotitolo "Sync your films". Scartati: "Rave" (esiste già "Rave – Watch Party"),

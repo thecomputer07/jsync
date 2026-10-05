@@ -1,11 +1,15 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Wordmark } from '@/components/brand';
+import { Focusable } from '@/components/focusable';
 import { Button, Input } from '@/components/ui';
+import { useT } from '@/i18n';
+import { PRIVACY_URL } from '@/lib/invite';
 import { useSession } from '@/state/session';
 import { colors, font, space, tv } from '@/theme';
 
@@ -15,6 +19,7 @@ export default function Connect() {
   const [address, setAddress] = useState(params.server ?? pendingInvite?.server ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useT();
 
   const go = async (value = address) => {
     setError(null);
@@ -26,7 +31,7 @@ export default function Connect() {
         params: { url, serverId: info.Id, serverName: info.ServerName, version: info.Version },
       });
     } catch (e: any) {
-      setError(e?.message ?? 'Server non raggiungibile.');
+      setError(e?.message ?? t('errors.serverUnreachable'));
     } finally {
       setBusy(false);
     }
@@ -39,24 +44,23 @@ export default function Connect() {
           <ScrollView contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
             <View style={styles.brand}>
               <Wordmark width={tv ? 420 : 260} />
-              <Text style={styles.subtitle}>
-                Guarda film e serie del tuo server Jellyfin, da solo o insieme agli amici, perfettamente sincronizzati.
-              </Text>
+              <Text style={styles.subtitle}>{t('connect.tagline')}</Text>
             </View>
 
             {pendingInvite ? (
               <View style={styles.invite}>
                 <Text style={styles.inviteText}>
-                  Hai un invito{pendingInvite.groupName ? ` al gruppo «${pendingInvite.groupName}»` : ''}. Accedi al server
-                  per entrare.
+                  {t('connect.inviteFor', {
+                    group: pendingInvite.groupName ? t('connect.inviteGroup', { name: pendingInvite.groupName }) : '',
+                  })}
                 </Text>
               </View>
             ) : null}
 
             <View style={styles.form}>
               <Input
-                label="Indirizzo del server Jellyfin"
-                placeholder="es. jellyfin.casa.it oppure 192.168.1.10:8096"
+                label={t('connect.address')}
+                placeholder={t('connect.addressPh')}
                 value={address}
                 onChangeText={setAddress}
                 autoCapitalize="none"
@@ -66,21 +70,24 @@ export default function Connect() {
                 autoFocus={!tv && !address}
               />
               {error ? <Text style={styles.error}>{error}</Text> : null}
-              <Button title="Continua" onPress={() => go()} loading={busy} disabled={!address.trim()} hasTVPreferredFocus={tv} />
+              <Button title={t('common.continue')} onPress={() => go()} loading={busy} disabled={!address.trim()} hasTVPreferredFocus={tv} />
               <Button
-                title="Prova con il server demo di Jellyfin"
+                title={t('connect.demo')}
                 variant="ghost"
                 onPress={() => {
                   setAddress('https://demo.jellyfin.org/stable');
                   go('https://demo.jellyfin.org/stable');
                 }}
               />
-              {account ? <Button title="Annulla" variant="ghost" onPress={() => router.back()} /> : null}
+              {account ? <Button title={t('common.cancel')} variant="ghost" onPress={() => router.back()} /> : null}
             </View>
 
-            <Text style={styles.note}>
-              JSync non ha server propri e non raccoglie dati: si collega solo al server Jellyfin che inserisci tu.
-            </Text>
+            <View style={{ gap: space.xs, alignItems: 'center' }}>
+              <Text style={styles.note}>{t('connect.privacy')}</Text>
+              <Focusable onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL).catch(() => {})} style={styles.link} zoom={false}>
+                <Text style={styles.linkText}>{t('connect.privacyLink')}</Text>
+              </Focusable>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -110,5 +117,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: space.md,
   },
+  link: { paddingHorizontal: space.sm, paddingVertical: space.xs },
+  linkText: { color: colors.textDim, fontSize: font.xs, textDecorationLine: 'underline' },
   inviteText: { color: colors.text, fontSize: font.sm, textAlign: 'center' },
 });

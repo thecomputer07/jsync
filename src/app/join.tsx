@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button, Loading } from '@/components/ui';
+import { useT } from '@/i18n';
 import { normalizeServerUrl } from '@/lib/jellyfin/client';
 import { useSession } from '@/state/session';
 import { colors, font, space } from '@/theme';
@@ -18,6 +19,7 @@ export default function Join() {
   const { account, syncplay, findAccountForServer, switchAccount, setPendingInvite } = useSession();
   const [error, setError] = useState<string | null>(null);
   const done = useRef(false);
+  const { t } = useT();
 
   useEffect(() => {
     if (!s || !g) return;
@@ -42,25 +44,25 @@ export default function Join() {
         done.current = false;
         setError(
           e?.status === 403
-            ? 'Il tuo account non può entrare nei gruppi su questo server.'
+            ? t('join.noPermission')
             : e?.status === 404 || e?.status === 400
-              ? 'Il gruppo non esiste più.'
-              : (e?.message ?? 'Impossibile entrare nel gruppo.'),
+              ? t('join.gone')
+              : (e?.message ?? t('join.failed')),
         );
       });
-  }, [s, g, n, account, syncplay, findAccountForServer, switchAccount, setPendingInvite]);
+  }, [s, g, n, account, syncplay, findAccountForServer, switchAccount, setPendingInvite, t]);
 
-  const shownError = !s || !g ? 'Invito non valido.' : error;
+  const shownError = !s || !g ? t('join.invalid') : error;
   if (shownError) {
     return (
       <View style={styles.wrap}>
-        <Text style={styles.title}>Invito</Text>
+        <Text style={styles.title}>{t('join.title')}</Text>
         <Text style={styles.msg}>{shownError}</Text>
-        <Button title="Vai alla home" variant="secondary" onPress={() => router.replace(account ? '/home' : '/connect')} />
+        <Button title={t('common.goHome')} variant="secondary" onPress={() => router.replace(account ? '/home' : '/connect')} />
       </View>
     );
   }
-  return <Loading label={n ? `Entro nel gruppo «${n}»…` : 'Entro nel gruppo…'} />;
+  return <Loading label={n ? t('join.joiningNamed', { name: n }) : t('join.joining')} />;
 }
 
 const styles = StyleSheet.create({

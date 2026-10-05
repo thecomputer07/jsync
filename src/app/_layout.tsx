@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import NetInfo from '@react-native-community/netinfo';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { DarkTheme, ThemeProvider, Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +8,7 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { NetworkBanner } from '@/components/network-banner';
 import { ToastHost } from '@/components/toast';
 import { lockAppOrientation } from '@/lib/orientation';
 import { playerState } from '@/lib/player-state';
@@ -14,6 +16,9 @@ import { SessionProvider, useSession } from '@/state/session';
 import { colors } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+// React Query sa se c'è rete: senza connessione mette in pausa le richieste e riprova quando torna.
+onlineManager.setEventListener((setOnline) => NetInfo.addEventListener((s) => setOnline(!!s.isConnected)));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +77,7 @@ function RootStack() {
         <Stack.Screen name="join" />
       </Stack>
       <SyncPlayNavigator />
+      <NetworkBanner />
       <ToastHost />
     </>
   );

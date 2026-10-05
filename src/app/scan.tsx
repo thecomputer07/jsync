@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Focusable } from '@/components/focusable';
 import { Button } from '@/components/ui';
+import { useT } from '@/i18n';
 import { parseInvite } from '@/lib/invite';
 import { colors, font, space } from '@/theme';
 
@@ -14,14 +15,15 @@ export default function Scan() {
   const [perm, request] = useCameraPermissions();
   const insets = useSafeAreaInsets();
   const handled = useRef(false);
+  const { t } = useT();
 
   if (!perm) return <View style={styles.wrap} />;
   if (!perm.granted) {
     return (
       <View style={[styles.wrap, { padding: space.xl, justifyContent: 'center', gap: space.lg }]}>
-        <Text style={styles.msg}>Per leggere il QR di un invito serve la fotocamera.</Text>
-        <Button title="Consenti fotocamera" onPress={request} />
-        <Button title="Annulla" variant="ghost" onPress={() => router.back()} />
+        <Text style={styles.msg}>{t('scan.needCamera')}</Text>
+        <Button title={t('scan.allow')} onPress={request} />
+        <Button title={t('common.cancel')} variant="ghost" onPress={() => router.back()} />
       </View>
     );
   }
@@ -41,7 +43,7 @@ export default function Scan() {
         }}
       />
       <View style={styles.frame} pointerEvents="none" />
-      <Text style={[styles.tip, { bottom: insets.bottom + space.xxl }]}>Inquadra il QR dell’invito</Text>
+      <Text style={[styles.tip, { bottom: insets.bottom + space.xxl }]}>{t('scan.aim')}</Text>
       <Focusable onPress={() => router.back()} style={[styles.close, { top: insets.top + space.md }]} zoom={false}>
         <Ionicons name="close" size={28} color="#fff" />
       </Focusable>

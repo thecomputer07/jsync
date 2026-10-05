@@ -9,8 +9,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Wordmark } from '@/components/brand';
 import { Focusable } from '@/components/focusable';
-import { MediaRow, backdropUrl, logoUrl, openItem } from '@/components/media';
+import { MediaRow, WIDE, backdropUrl, logoUrl, openItem } from '@/components/media';
 import { Button, ErrorView, Loading } from '@/components/ui';
+import { useT } from '@/i18n';
 import { itemSubtitle } from '@/lib/jellyfin/client';
 import type { BaseItem } from '@/lib/jellyfin/types';
 import { useClient, useSession, useSyncPlayState } from '@/state/session';
@@ -22,11 +23,13 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const sp = useSyncPlayState();
   const [refreshing, setRefreshing] = useState(false);
+  const { t } = useT();
   const key = account?.id;
 
   const views = useQuery({ queryKey: ['home', key, 'views'], queryFn: () => c.views() });
   const resume = useQuery({ queryKey: ['home', key, 'resume'], queryFn: () => c.resume() });
   const nextUp = useQuery({ queryKey: ['home', key, 'nextup'], queryFn: () => c.nextUp() });
+  const favorites = useQuery({ queryKey: ['home', key, 'favorites'], queryFn: () => c.favorites() });
   const featured = useQuery({ queryKey: ['home', key, 'featured'], queryFn: () => c.featured(), staleTime: 10 * 60_000 });
   const latest = useQueries({
     queries: (views.data?.Items ?? []).map((v) => ({
@@ -37,7 +40,7 @@ export default function Home() {
 
   const refresh = async () => {
     setRefreshing(true);
-    await Promise.all([views.refetch(), resume.refetch(), nextUp.refetch(), ...latest.map((l) => l.refetch())]);
+    await Promise.all([views.refetch(), resume.refetch(), nextUp.refetch(), favorites.refetch(), ...latest.map((l) => l.refetch())]);
     setRefreshing(false);
   };
 
@@ -64,14 +67,15 @@ export default function Home() {
         <Focusable style={styles.groupBar} onPress={() => router.push('/groups')} zoom={false}>
           <View style={styles.liveDot} />
           <Text style={styles.groupText} numberOfLines={1}>
-            Gruppo «{sp.group.GroupName}» · {sp.group.Participants?.length ?? 1} persone
+            {t('home.groupBar', { name: sp.group.GroupName, count: sp.group.Participants?.length ?? 1 })}
           </Text>
           <Ionicons name="chevron-forward" size={16} color={colors.textDim} />
         </Focusable>
       ) : null}
 
-      <MediaRow title="Continua a guardare" items={resume.data?.Items} kind="landscape" />
-      <MediaRow title="Prossimi episodi" items={nextUp.data?.Items} kind="landscape" />
+      <MediaRow title={t('home.continue')} items={resume.data?.Items} kind="landscape" />
+      <MediaRow title={t('home.nextUp')} items={nextUp.data?.Items} kind="landscape" />
+      <MediaRow title={t('home.myList')} items={favorites.data?.Items} kind="poster" />
 
       {libs.length > 1 ? (
         <View style={{ marginBottom: space.xl }}>
@@ -89,11 +93,11 @@ export default function Home() {
       ) : null}
 
       {libs.map((v, i) => (
-        <MediaRow key={v.Id} title={`Aggiunti di recente · ${v.Name}`} items={latest[i]?.data as BaseItem[] | undefined} />
+        <MediaRow key={v.Id} title={t('home.latestIn', { name: v.Name })} items={latest[i]?.data as BaseItem[] | undefined} />
       ))}
 
       {!libs.length ? (
-        <Text style={[styles.empty, { marginTop: space.xxl }]}>Nessuna libreria video su questo server.</Text>
+        <Text style={[styles.empty, { marginTop: space.xxl }]}>{t('home.noLibraries')}</Text>
       ) : null}
     </ScrollView>
   );
@@ -103,20 +107,28 @@ function Hero({ item }: { item: BaseItem }) {
   const c = useClient();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const h = tv ? height * 0.62 : Math.min(height * 0.62, width * 1.25);
+  const { t } = useT();
+  // Su iPad/tablet l'hero non deve mangiare tutto lo schermo: al massimo il 60% dell'altezza.
+  const wide = !tv && width >= WIDE;
+  const h = tv ? height * 0.62 : wide ? height * 0.6 : Math.min(height * 0.62, width * 1.25);
   const logo = logoUrl(c, item);
   return (
     <View style={{ width, height: h }}>
       <Image source={backdropUrl(c, item, tv ? 1920 : 1280)} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
       <LinearGradient colors={['rgba(7,7,10,0.35)', 'transparent', 'rgba(7,7,10,0.6)', colors.bg]} locations={[0, 0.3, 0.7, 1]} style={StyleSheet.absoluteFill} />
-      <View style={{ position: 'absolute', top: insets.top + space.sm, left: tv ? space.xxl * 2 : space.lg }}>
+      <View style={{ position: 'absolute', top: insets.top + space.sm, left: tv || wide ? space.xxl * 2 : space.lg }}>
         <Wordmark width={tv ? 220 : 130} />
       </View>
-      <View style={[styles.heroBody, tv && { alignItems: 'flex-start', paddingHorizontal: space.xxl * 2 }]}>
+      <View style={[styles.heroBody, (tv || wide) && { alignItems: 'flex-start', paddingHorizontal: space.xxl * 2 }]}>
         {logo ? (
-          <Image source={logo} style={{ width: tv ? 480 : width * 0.65, height: tv ? 150 : 90 }} contentFit="contain" />
+          <Image
+            source={logo}
+            style={{ width: tv ? 480 : wide ? Math.min(420, width * 0.4) : width * 0.65, height: tv ? 150 : wide ? 120 : 90 }}
+            contentFit="contain"
+            contentPosition={tv || wide ? 'left' : 'center'}
+          />
         ) : (
-          <Text style={styles.heroTitle} numberOfLines={2}>
+          <Text style={[styles.heroTitle, wide && { textAlign: 'left', maxWidth: width * 0.6 }]} numberOfLines={2}>
             {item.Name}
           </Text>
         )}
@@ -125,7 +137,7 @@ function Hero({ item }: { item: BaseItem }) {
         </Text>
         <View style={styles.heroBtns}>
           <Button
-            title="Riproduci"
+            title={t('home.play')}
             variant="light"
             icon={<Ionicons name="play" size={18} color="#000" />}
             onPress={() => openItem(item)}
@@ -133,7 +145,7 @@ function Hero({ item }: { item: BaseItem }) {
             hasTVPreferredFocus={tv}
           />
           <Button
-            title="Info"
+            title={t('home.info')}
             variant="secondary"
             icon={<Ionicons name="information-circle-outline" size={18} color={colors.text} />}
             onPress={() => openItem(item)}

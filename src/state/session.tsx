@@ -217,7 +217,7 @@ export function useSession() {
 /** Client dell'account attivo (le schermate interne esistono solo da loggati). */
 export function useClient() {
   const { client } = useSession();
-  if (!client) throw new Error('Nessun account attivo');
+  if (!client) throw new Error(t('errors.noUser'));
   return client;
 }
 

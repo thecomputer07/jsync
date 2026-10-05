@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Focusable } from '@/components/focusable';
 import { Button, Input } from '@/components/ui';
+import { useT } from '@/i18n';
 import { JellyfinClient, normalizeServerUrl } from '@/lib/jellyfin/client';
 import type { AuthResult, UserDto } from '@/lib/jellyfin/types';
 import { newDeviceId, useSession } from '@/state/session';
@@ -15,6 +16,7 @@ import { colors, font, radius, space, tv } from '@/theme';
 export default function Login() {
   const p = useLocalSearchParams<{ url: string; serverId: string; serverName: string; version: string }>();
   const { completeLogin, accounts, pendingInvite } = useSession();
+  const { t } = useT();
 
   // Jellyfin revoca i token di un DeviceId a ogni nuovo login con quel DeviceId: lo riusiamo
   // solo se rientra lo stesso utente (sostituisce la sua vecchia sessione), altrimenti uno nuovo.
@@ -61,7 +63,7 @@ export default function Login() {
     try {
       await finish(await client.authenticate(username.trim(), password));
     } catch (e: any) {
-      setError(e?.status === 401 ? 'Nome utente o password errati.' : (e?.message ?? 'Accesso non riuscito.'));
+      setError(e?.status === 401 ? t('login.wrong') : (e?.message ?? t('login.failed')));
     } finally {
       setBusy(false);
     }
@@ -83,7 +85,7 @@ export default function Login() {
         } catch {}
       }, 3000);
     } catch (e: any) {
-      setError(e?.message ?? 'Quick Connect non disponibile.');
+      setError(e?.message ?? t('login.qcUnavailable'));
     }
   };
 
@@ -93,7 +95,7 @@ export default function Login() {
         <ScrollView contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
           <Focusable onPress={() => router.back()} style={styles.back} zoom={false}>
             <Ionicons name="chevron-back" size={22} color={colors.textDim} />
-            <Text style={styles.backText}>Cambia server</Text>
+            <Text style={styles.backText}>{t('login.changeServer')}</Text>
           </Focusable>
 
           <View>
@@ -130,13 +132,10 @@ export default function Login() {
 
           {qcCode ? (
             <View style={styles.qc}>
-              <Text style={styles.qcTitle}>Codice Quick Connect</Text>
+              <Text style={styles.qcTitle}>{t('login.qcTitle')}</Text>
               <Text style={styles.qcCode}>{qcCode}</Text>
-              <Text style={styles.qcHelp}>
-                Da un dispositivo già collegato apri Jellyfin (o JSync → Impostazioni → Autorizza un dispositivo) e inserisci
-                questo codice. Si entra da solo appena lo confermi.
-              </Text>
-              <Button title="Annulla" variant="ghost" onPress={() => {
+              <Text style={styles.qcHelp}>{t('login.qcHelp')}</Text>
+              <Button title={t('common.cancel')} variant="ghost" onPress={() => {
                 if (qcTimer.current) clearInterval(qcTimer.current);
                 setQcCode(null);
               }} />
@@ -144,7 +143,7 @@ export default function Login() {
           ) : (
             <View style={styles.form}>
               <Input
-                label="Nome utente"
+                label={t('login.username')}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -155,7 +154,7 @@ export default function Login() {
               />
               <Input
                 ref={pwRef}
-                label="Password"
+                label={t('login.password')}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -165,9 +164,9 @@ export default function Login() {
                 onSubmitEditing={login}
               />
               {error ? <Text style={styles.error}>{error}</Text> : null}
-              <Button title="Accedi" onPress={login} loading={busy} disabled={!username.trim()} hasTVPreferredFocus={tv && !qcAvailable} />
+              <Button title={t('login.signIn')} onPress={login} loading={busy} disabled={!username.trim()} hasTVPreferredFocus={tv && !qcAvailable} />
               {qcAvailable ? (
-                <Button title="Accedi con Quick Connect" variant="secondary" onPress={startQuickConnect} hasTVPreferredFocus={tv} />
+                <Button title={t('login.quickConnect')} variant="secondary" onPress={startQuickConnect} hasTVPreferredFocus={tv} />
               ) : null}
             </View>
           )}

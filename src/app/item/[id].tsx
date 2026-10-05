@@ -8,9 +8,10 @@ import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Focusable } from '@/components/focusable';
-import { backdropUrl, landscapeUrl, logoUrl } from '@/components/media';
+import { WIDE, backdropUrl, landscapeUrl, logoUrl } from '@/components/media';
 import { toast } from '@/components/toast';
 import { Button, ErrorView, Loading, ProgressBar } from '@/components/ui';
+import { useT } from '@/i18n';
 import { formatDuration, itemSubtitle, runtimeLabel, ticksToSeconds } from '@/lib/jellyfin/client';
 import type { BaseItem } from '@/lib/jellyfin/types';
 import { playItem, seriesEntryEpisode } from '@/lib/play';
@@ -25,7 +26,11 @@ export default function ItemDetail() {
   const qc = useQueryClient();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
+  const { t } = useT();
   const key = account?.id;
+  // Su iPad/tablet il contenuto resta in una colonna centrata e leggibile.
+  const wide = !tv && width >= WIDE;
+  const bodyW = wide ? Math.min(900, width - space.xl * 2) : width;
 
   const item = useQuery({ queryKey: ['item', key, id], queryFn: () => c.item(id) });
   const isSeries = item.data?.Type === 'Series';
@@ -50,7 +55,7 @@ export default function ItemDetail() {
   });
 
   if (item.isLoading) return <Loading />;
-  if (item.error || !item.data) return <ErrorView message={(item.error as Error)?.message ?? 'Non trovato'} onRetry={() => item.refetch()} />;
+  if (item.error || !item.data) return <ErrorView message={(item.error as Error)?.message ?? t('item.notFound')} onRetry={() => item.refetch()} />;
 
   const it = item.data;
   const playTarget: BaseItem | null | undefined = isSeries ? entry.data : it;
@@ -61,7 +66,7 @@ export default function ItemDetail() {
     try {
       await playItem({ client: c, syncplay, item: target, startTicks, inGroup });
     } catch (e: any) {
-      toast(e?.message ?? 'Impossibile avviare', 'error');
+      toast(e?.message ?? t('item.cannotStart'), 'error');
     }
   };
 
@@ -76,15 +81,26 @@ export default function ItemDetail() {
     }
   };
 
-  const heroH = tv ? height * 0.55 : Math.min(height * 0.5, width * 0.9);
+  const isFav = !!it.UserData?.IsFavorite;
+  const toggleFavorite = async () => {
+    try {
+      await c.setFavorite(it.Id, !isFav);
+      qc.invalidateQueries({ queryKey: ['item', key, id] });
+      qc.invalidateQueries({ queryKey: ['home'] });
+    } catch (e: any) {
+      toast(e?.message, 'error');
+    }
+  };
+
+  const heroH = tv ? height * 0.55 : wide ? height * 0.5 : Math.min(height * 0.5, width * 0.9);
   const logo = logoUrl(c, it);
   const playLabel = isSeries
     ? playTarget
-      ? `${canResume ? 'Riprendi' : 'Riproduci'} S${playTarget.ParentIndexNumber ?? 1}:E${playTarget.IndexNumber ?? 1}`
-      : 'Riproduci'
+      ? t(canResume ? 'item.resumeEp' : 'item.playEp', { s: playTarget.ParentIndexNumber ?? 1, e: playTarget.IndexNumber ?? 1 })
+      : t('item.play')
     : canResume
-      ? `Riprendi da ${formatDuration(ticksToSeconds(pos))}`
-      : 'Riproduci';
+      ? t('item.resumeFrom', { time: formatDuration(ticksToSeconds(pos)) })
+      : t('item.play');
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: space.xxl * 2 }}>
@@ -96,9 +112,9 @@ export default function ItemDetail() {
         </Focusable>
       </View>
 
-      <View style={[styles.body, tv && { paddingHorizontal: space.xxl * 2 }]}>
+      <View style={[styles.body, tv && { paddingHorizontal: space.xxl * 2 }, wide && { width: bodyW, alignSelf: 'center', paddingHorizontal: 0 }]}>
         {logo && !tv ? (
-          <Image source={logo} style={{ width: width * 0.6, height: 80, alignSelf: 'flex-start' }} contentFit="contain" contentPosition="left" />
+          <Image source={logo} style={{ width: Math.min(bodyW * 0.6, 420), height: wide ? 110 : 80, alignSelf: 'flex-start' }} contentFit="contain" contentPosition="left" />
         ) : (
           <Text style={styles.title}>{it.Type === 'Episode' ? it.Name : it.Name}</Text>
         )}
@@ -118,7 +134,7 @@ export default function ItemDetail() {
           <ProgressBar value={(pos / it.RunTimeTicks) * 100} style={{ marginTop: space.sm }} />
         ) : null}
 
-        <View style={[styles.actions, tv && { flexDirection: 'row' }]}>
+        <View style={[styles.actions, (tv || wide) && { flexDirection: 'row', flexWrap: 'wrap' }]}>
           <Button
             title={playLabel}
             variant="light"
@@ -130,7 +146,7 @@ export default function ItemDetail() {
           />
           {canResume ? (
             <Button
-              title="Dall'inizio"
+              title={t('item.fromStart')}
               variant="secondary"
               icon={<Ionicons name="refresh" size={18} color={colors.text} />}
               onPress={() => playTarget && play(playTarget, 0, false)}
@@ -138,13 +154,13 @@ export default function ItemDetail() {
             />
           ) : null}
           <Button
-            title={sp.group ? `Guarda nel gruppo «${sp.group.GroupName}»` : 'Guarda insieme'}
+            title={sp.group ? t('item.watchInGroup', { name: sp.group.GroupName }) : t('item.watchTogether')}
             icon={<Ionicons name="people" size={18} color={colors.text} />}
             disabled={!playTarget}
             onPress={() => {
               if (!playTarget) return;
               if (!sp.group) {
-                toast('Crea o entra in un gruppo, poi torna qui.');
+                toast(t('item.needGroup'));
                 router.push('/groups');
                 return;
               }
@@ -156,24 +172,30 @@ export default function ItemDetail() {
 
         {it.Overview ? <Text style={styles.overview}>{it.Overview}</Text> : null}
 
-        {!isSeries ? (
-          <Focusable onPress={togglePlayed} style={styles.inline} zoom={false}>
-            <Ionicons name={it.UserData?.Played ? 'checkmark-circle' : 'checkmark-circle-outline'} size={22} color={it.UserData?.Played ? colors.accent : colors.textDim} />
-            <Text style={styles.inlineText}>{it.UserData?.Played ? 'Visto' : 'Segna come visto'}</Text>
+        <View style={styles.inlineRow}>
+          {!isSeries ? (
+            <Focusable onPress={togglePlayed} style={styles.inline} zoom={false}>
+              <Ionicons name={it.UserData?.Played ? 'checkmark-circle' : 'checkmark-circle-outline'} size={22} color={it.UserData?.Played ? colors.accent : colors.textDim} />
+              <Text style={styles.inlineText}>{it.UserData?.Played ? t('item.watched') : t('item.markWatched')}</Text>
+            </Focusable>
+          ) : null}
+          <Focusable onPress={toggleFavorite} style={styles.inline} zoom={false}>
+            <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={22} color={isFav ? colors.accent2 : colors.textDim} />
+            <Text style={styles.inlineText}>{isFav ? t('item.inMyList') : t('item.addToList')}</Text>
           </Focusable>
-        ) : null}
+        </View>
 
         {it.Type === 'Episode' && it.SeriesId ? (
           <Focusable onPress={() => router.push({ pathname: '/item/[id]', params: { id: it.SeriesId!, season: it.SeasonId } })} style={styles.inline} zoom={false}>
             <Ionicons name="albums-outline" size={20} color={colors.textDim} />
-            <Text style={styles.inlineText}>Tutti gli episodi di {it.SeriesName}</Text>
+            <Text style={styles.inlineText}>{t('item.allEpisodes', { name: it.SeriesName ?? '' })}</Text>
           </Focusable>
         ) : null}
       </View>
 
       {isSeries ? (
-        <View style={{ marginTop: space.lg }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.seasons}>
+        <View style={[{ marginTop: space.lg }, wide && { width: bodyW, alignSelf: 'center' }]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.seasons, wide && { paddingHorizontal: 0 }]}>
             {(seasons.data?.Items ?? []).map((s) => (
               <Focusable key={s.Id} onPress={() => setSeasonId(s.Id)} style={[styles.seasonChip, seasonId === s.Id && styles.seasonOn]}>
                 <Text style={[styles.seasonText, seasonId === s.Id && { color: '#000' }]}>{s.Name}</Text>
@@ -185,7 +207,7 @@ export default function ItemDetail() {
               <Loading />
             </View>
           ) : (
-            <View style={{ paddingHorizontal: tv ? space.xxl * 2 : space.lg, gap: space.lg, marginTop: space.lg }}>
+            <View style={{ paddingHorizontal: tv ? space.xxl * 2 : wide ? 0 : space.lg, gap: space.lg, marginTop: space.lg }}>
               {(episodes.data?.Items ?? []).map((ep) => (
                 <EpisodeRow key={ep.Id} ep={ep} onPress={() => router.push({ pathname: '/item/[id]', params: { id: ep.Id } })} />
               ))}
@@ -237,6 +259,7 @@ const styles = StyleSheet.create({
   genres: { color: colors.textMute, fontSize: font.xs },
   actions: { gap: space.sm, marginTop: space.md },
   overview: { color: colors.text, fontSize: font.md, lineHeight: font.md * 1.45, marginTop: space.md, opacity: 0.9, maxWidth: 900 },
+  inlineRow: { flexDirection: 'row', flexWrap: 'wrap', columnGap: space.xl },
   inline: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.sm, alignSelf: 'flex-start' },
   inlineText: { color: colors.textDim, fontSize: font.sm, fontWeight: '600' },
   seasons: { paddingHorizontal: tv ? space.xxl * 2 : space.lg, gap: space.sm },

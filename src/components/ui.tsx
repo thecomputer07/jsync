@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
 import { forwardRef } from 'react';
 
+import { useT } from '@/i18n';
 import { colors, font, gradient, radius, space, tv } from '@/theme';
 import { Focusable } from './focusable';
 
@@ -99,10 +100,11 @@ export function Loading({ label }: { label?: string }) {
 }
 
 export function ErrorView({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  const { t } = useT();
   return (
     <View style={[styles.center, { padding: space.xl, gap: space.lg }]}>
       <Text style={[styles.dim, { textAlign: 'center' }]}>{message}</Text>
-      {onRetry ? <Button title="Riprova" variant="secondary" onPress={onRetry} /> : null}
+      {onRetry ? <Button title={t('common.retry')} variant="secondary" onPress={onRetry} /> : null}
     </View>
   );
 }

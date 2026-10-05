@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>JSync invite</title>
+  <link rel="icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../assets/site.css">
+  <meta property="og:title" content="JSync — watch together">
+  <meta property="og:description" content="You're invited to watch together on JSync.">
+  <meta property="og:image" content="https://thecomputer07.github.io/jsync/assets/icon-1024.png">
+</head>
+<body>
+<main>
+  <img class="logo" src="../assets/wordmark.svg" alt="JSync — Sync your films">
+  <div id="ok" hidden>
+    <h1 id="title"></h1>
+    <p id="lead"></p>
+    <div class="card">
+      <p class="muted" id="serverLabel"></p>
+      <p id="server" style="word-break: break-all; color: var(--text)"></p>
+    </div>
+    <div class="row">
+      <a class="btn" id="open" href="#"></a>
+    </div>
+    <p class="muted" id="noapp" style="margin-top: 24px"></p>
+  </div>
+  <div id="bad" hidden>
+    <h1 id="badTitle"></h1>
+    <p id="badText"></p>
+  </div>
+  <footer><a href="../" id="home"></a> · <a href="../privacy/" id="privacy"></a></footer>
+</main>
+<script>
+  // I dati dell'invito stanno dopo il "#": il browser non li manda a GitHub né a nessun altro.
+  // Questa pagina li legge e li passa all'app JSync (jsync://join?...). Niente cookie, niente analytics.
+  (function () {
+    var it = (navigator.language || '').toLowerCase().indexOf('it') === 0;
+    var T = it ? {
+      title: 'Sei invitato a guardare insieme', titleNamed: 'Sei invitato nel gruppo «{n}»',
+      lead: 'Apri l’invito con l’app JSync: entrerai nel gruppo col tuo account di questo server Jellyfin.',
+      server: 'Server Jellyfin', open: 'Apri in JSync',
+      noapp: 'Non hai ancora JSync? L’app sarà presto su App Store e Google Play. Serve un account sul server qui sopra.',
+      badTitle: 'Invito non valido', badText: 'Il link è incompleto. Chiedi a chi ti ha invitato di mandarlo di nuovo.',
+      home: 'JSync', privacy: 'Privacy'
+    } : {
+      title: 'You’re invited to watch together', titleNamed: 'You’re invited to the group “{n}”',
+      lead: 'Open the invite with the JSync app: you’ll join the group with your own account on this Jellyfin server.',
+      server: 'Jellyfin server', open: 'Open in JSync',
+      noapp: 'Don’t have JSync yet? The app is coming soon to the App Store and Google Play. You need an account on the server above.',
+      badTitle: 'Invalid invite', badText: 'The link is incomplete. Ask whoever invited you to send it again.',
+      home: 'JSync', privacy: 'Privacy'
+    };
+    if (it) document.documentElement.lang = 'it';
+    function $(id) { return document.getElementById(id); }
+    function parse(qs) {
+      var out = {};
+      qs.replace(/^#/, '').split('&').forEach(function (p) {
+        if (!p) return;
+        var i = p.indexOf('=');
+        try { out[decodeURIComponent(i < 0 ? p : p.slice(0, i))] = decodeURIComponent((i < 0 ? '' : p.slice(i + 1)).replace(/\+/g, ' ')); } catch (e) {}
+      });
+      return out;
+    }
+    $('home').textContent = T.home;
+    $('privacy').textContent = T.privacy;
+    var q = parse(location.hash);
+    var valid = q.s && q.g && /^https?:\/\//i.test(q.s);
+    if (!valid) {
+      $('bad').hidden = false;
+      $('badTitle').textContent = T.badTitle;
+      $('badText').textContent = T.badText;
+      return;
+    }
+    var app = 'jsync://join?s=' + encodeURIComponent(q.s) + '&g=' + encodeURIComponent(q.g) + (q.n ? '&n=' + encodeURIComponent(q.n) : '');
+    $('ok').hidden = false;
+    // testo dell'invito sempre come textContent: niente HTML iniettabile dal link
+    $('title').textContent = q.n ? T.titleNamed.replace('{n}', q.n) : T.title;
+    $('lead').textContent = T.lead;
+    $('serverLabel').textContent = T.server;
+    $('server').textContent = q.s;
+    $('open').textContent = T.open;
+    $('open').setAttribute('href', app);
+    $('noapp').textContent = T.noapp;
+    // tentativo automatico: se l'app c'è si apre, altrimenti resta la pagina
+    setTimeout(function () { location.href = app; }, 350);
+  })();
+</script>
+</body>
+</html>

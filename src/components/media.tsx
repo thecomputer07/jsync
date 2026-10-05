@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { memo } from 'react';
 import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
+import { useT } from '@/i18n';
 import { itemSubtitle, ticksToSeconds, type JellyfinClient } from '@/lib/jellyfin/client';
 import type { BaseItem } from '@/lib/jellyfin/types';
 import { useClient } from '@/state/session';
@@ -42,6 +43,18 @@ export function logoUrl(c: JellyfinClient, item: BaseItem) {
   if (item.ImageTags?.Logo) return c.imageUrl(item.Id, 'Logo', { tag: item.ImageTags.Logo, width: 600 });
   if (item.ParentLogoItemId) return c.imageUrl(item.ParentLogoItemId, 'Logo', { tag: item.ParentLogoImageTag, width: 600 });
   return undefined;
+}
+
+/** Schermo largo (iPad, tablet): da qui in su le griglie e le card si allargano. */
+export const WIDE = 768;
+
+/** Colonne delle griglie di locandine (libreria, ricerca): 3 sul telefono, 5–7 su tablet, 7 sulla TV. */
+export function gridColumns(width: number) {
+  if (tv) return 7;
+  if (width >= 1100) return 7;
+  if (width >= 900) return 6;
+  if (width >= 700) return 5;
+  return 3;
 }
 
 export function openItem(item: BaseItem) {
@@ -98,6 +111,7 @@ export const LandscapeCard = memo(function LandscapeCard({
   onPress?: () => void;
 }) {
   const c = useClient();
+  const { t } = useT();
   const pct =
     item.UserData?.PlayedPercentage ??
     (item.RunTimeTicks && item.UserData?.PlaybackPositionTicks
@@ -123,7 +137,7 @@ export const LandscapeCard = memo(function LandscapeCard({
         {item.Type === 'Episode'
           ? `${itemSubtitle(item).split(' · ').pop()} · ${item.Name}`
           : remaining && pct > 0
-            ? `Mancano ${remaining} min`
+            ? t('item.remaining', { min: remaining })
             : itemSubtitle(item)}
       </Text>
     </Focusable>
@@ -144,14 +158,19 @@ export function MediaRow({
   // raggruppa gli episodi per serie): mostriamo ogni titolo una volta sola.
   const unique = items?.filter((it, i, arr) => arr.findIndex((x) => x.Id === it.Id) === i);
   if (!unique?.length) return null;
+  const wide = width >= WIDE;
   const cardW =
     kind === 'poster'
       ? tv
         ? Math.round(width / 7.5)
-        : Math.min(150, Math.round(width / 3.4))
+        : wide
+          ? Math.round(width / 7)
+          : Math.min(150, Math.round(width / 3.4))
       : tv
         ? Math.round(width / 4.4)
-        : Math.min(300, Math.round(width / 1.7));
+        : wide
+          ? Math.round(width / 3.5)
+          : Math.min(300, Math.round(width / 1.7));
   return (
     <View style={{ marginBottom: space.xl }}>
       <SectionTitle>{title}</SectionTitle>

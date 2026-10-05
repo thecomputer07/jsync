@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PosterCard } from '@/components/media';
+import { PosterCard, gridColumns } from '@/components/media';
 import { Input, Loading } from '@/components/ui';
+import { useT } from '@/i18n';
 import { useClient, useSession } from '@/state/session';
 import { colors, font, space, tv } from '@/theme';
 
@@ -16,10 +17,11 @@ export default function Search() {
   const { width } = useWindowDimensions();
   const [text, setText] = useState('');
   const [term, setTerm] = useState('');
+  const { t } = useT();
 
   useEffect(() => {
-    const t = setTimeout(() => setTerm(text.trim()), 350);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setTerm(text.trim()), 350);
+    return () => clearTimeout(timer);
   }, [text]);
 
   const q = useQuery({
@@ -28,7 +30,7 @@ export default function Search() {
     enabled: term.length >= 2,
   });
 
-  const cols = tv ? 7 : width > 700 ? 5 : 3;
+  const cols = gridColumns(width);
   const cardW = (width - space.lg * 2 - space.md * (cols - 1)) / cols;
 
   return (
@@ -36,7 +38,7 @@ export default function Search() {
       <View style={styles.bar}>
         <Ionicons name="search" size={20} color={colors.textMute} style={styles.icon} />
         <Input
-          placeholder="Film, serie, episodi…"
+          placeholder={t('search.placeholder')}
           value={text}
           onChangeText={setText}
           autoCapitalize="none"
@@ -58,9 +60,7 @@ export default function Search() {
           keyboardDismissMode="on-drag"
           renderItem={({ item }) => <PosterCard item={item} width={cardW} />}
           ListEmptyComponent={
-            <Text style={styles.empty}>
-              {term.length >= 2 ? 'Nessun risultato.' : 'Cerca nella tua libreria di film e serie.'}
-            </Text>
+            <Text style={styles.empty}>{term.length >= 2 ? t('search.empty') : t('search.hint')}</Text>
           }
         />
       )}

@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { Platform, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useT } from '@/i18n';
 import { useSyncPlayState } from '@/state/session';
 import { colors, tv } from '@/theme';
 
@@ -37,6 +38,7 @@ const ICON_SIZE = tv ? 30 : 27;
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   return (
     <Tabs
       screenListeners={{
@@ -62,19 +64,19 @@ export default function TabsLayout() {
       }}>
       <Tabs.Screen
         name="home"
-        options={{ title: 'Home', tabBarIcon: ({ color }) => <Ionicons name="home" color={color} size={ICON_SIZE} /> }}
+        options={{ title: t('tabs.home'), tabBarIcon: ({ color }) => <Ionicons name="home" color={color} size={ICON_SIZE} /> }}
       />
       <Tabs.Screen
         name="search"
-        options={{ title: 'Cerca', tabBarIcon: ({ color }) => <Ionicons name="search" color={color} size={ICON_SIZE} /> }}
+        options={{ title: t('tabs.search'), tabBarIcon: ({ color }) => <Ionicons name="search" color={color} size={ICON_SIZE} /> }}
       />
       <Tabs.Screen
         name="groups"
-        options={{ title: 'Gruppi', tabBarIcon: ({ color }) => <GroupIcon color={color} size={ICON_SIZE} /> }}
+        options={{ title: t('tabs.groups'), tabBarIcon: ({ color }) => <GroupIcon color={color} size={ICON_SIZE} /> }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: 'Impostazioni', tabBarIcon: ({ color }) => <Ionicons name="settings-sharp" color={color} size={ICON_SIZE} /> }}
+        options={{ title: t('tabs.settings'), tabBarIcon: ({ color }) => <Ionicons name="settings-sharp" color={color} size={ICON_SIZE} /> }}
       />
     </Tabs>
   );
