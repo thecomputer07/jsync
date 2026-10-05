@@ -68,8 +68,8 @@ per tornare al React Native standard.
 - **Privacy**: l'app non raccoglie dati, quindi in App Store Connect si dichiara "Dati non raccolti".
   `NSAllowsArbitraryLoads` è attivo perché molti server Jellyfin sono in http su rete locale; ad Apple
   va motivato così.
-- **Bundle id**: `com.thecomputer07.jsync`, schema inviti `jsync://`. Lo slug Expo resta `rave` (progetto
-  `@thecomputer07/rave` su expo.dev, invisibile agli utenti).
+- **Bundle id**: `com.thecomputer07.jsync`, schema inviti `jsync://`.
+  Progetto Expo: `@thecomputer07/jsync`, cartella `Desktop\jsync`.
 
 ## Struttura
 

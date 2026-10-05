@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "JSync",
-    "slug": "rave",
+    "slug": "jsync",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
@@ -91,7 +91,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "db26d0c9-96e3-469b-ac13-e8222ba8ab45"
+        "projectId": "282e83de-2b22-4e13-8a2e-a995864afbf5"
       }
     },
     "owner": "thecomputer07"
