@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Wordmark } from '@/components/brand';
 import { Focusable } from '@/components/focusable';
 import { MediaRow, backdropUrl, logoUrl, openItem } from '@/components/media';
 import { Button, ErrorView, Loading } from '@/components/ui';
@@ -51,7 +52,13 @@ export default function Home() {
       style={{ flex: 1, backgroundColor: colors.bg }}
       contentContainerStyle={{ paddingBottom: space.xxl }}
       refreshControl={tv ? undefined : <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.text} />}>
-      {hero ? <Hero item={hero} /> : <View style={{ height: insets.top + space.lg }} />}
+      {hero ? (
+        <Hero item={hero} />
+      ) : (
+        <View style={{ paddingTop: insets.top + space.md, paddingHorizontal: space.lg, paddingBottom: space.lg }}>
+          <Wordmark width={tv ? 220 : 130} />
+        </View>
+      )}
 
       {sp.group ? (
         <Focusable style={styles.groupBar} onPress={() => router.push('/groups')} zoom={false}>
@@ -94,6 +101,7 @@ export default function Home() {
 
 function Hero({ item }: { item: BaseItem }) {
   const c = useClient();
+  const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const h = tv ? height * 0.62 : Math.min(height * 0.62, width * 1.25);
   const logo = logoUrl(c, item);
@@ -101,6 +109,9 @@ function Hero({ item }: { item: BaseItem }) {
     <View style={{ width, height: h }}>
       <Image source={backdropUrl(c, item, tv ? 1920 : 1280)} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} />
       <LinearGradient colors={['rgba(7,7,10,0.35)', 'transparent', 'rgba(7,7,10,0.6)', colors.bg]} locations={[0, 0.3, 0.7, 1]} style={StyleSheet.absoluteFill} />
+      <View style={{ position: 'absolute', top: insets.top + space.sm, left: tv ? space.xxl * 2 : space.lg }}>
+        <Wordmark width={tv ? 220 : 130} />
+      </View>
       <View style={[styles.heroBody, tv && { alignItems: 'flex-start', paddingHorizontal: space.xxl * 2 }]}>
         {logo ? (
           <Image source={logo} style={{ width: tv ? 480 : width * 0.65, height: tv ? 150 : 90 }} contentFit="contain" />

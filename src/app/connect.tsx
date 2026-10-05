@@ -3,8 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 
+import { Wordmark } from '@/components/brand';
 import { Button, Input } from '@/components/ui';
 import { useSession } from '@/state/session';
 import { colors, font, space, tv } from '@/theme';
@@ -38,9 +38,7 @@ export default function Connect() {
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
             <View style={styles.brand}>
-              <Image source={require('@/assets/images/splash-icon.png')} style={styles.logo} contentFit="contain" />
-              <Text style={styles.title}>JSync</Text>
-              <Text style={styles.tagline}>Sync your films</Text>
+              <Wordmark width={tv ? 420 : 260} />
               <Text style={styles.subtitle}>
                 Guarda film e serie del tuo server Jellyfin, da solo o insieme agli amici, perfettamente sincronizzati.
               </Text>
@@ -100,10 +98,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  brand: { alignItems: 'center', gap: space.sm },
-  logo: { width: tv ? 140 : 96, height: tv ? 140 : 96 },
-  title: { color: colors.text, fontSize: font.hero, fontWeight: '900', letterSpacing: -0.5 },
-  tagline: { color: colors.accent, fontSize: font.md, fontWeight: '800', letterSpacing: 0.5, marginTop: -4 },
+  brand: { alignItems: 'center', gap: space.lg },
   subtitle: { color: colors.textDim, fontSize: font.md, textAlign: 'center', lineHeight: font.md * 1.4 },
   form: { gap: space.md },
   error: { color: colors.danger, fontSize: font.sm },
