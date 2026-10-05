@@ -27,6 +27,15 @@ import { colors, font, radius, space, tv } from '@/theme';
 const HIDE_AFTER_MS = 4000;
 const NEXT_COUNTDOWN = 10;
 
+/** Il player nativo può essere già rilasciato (uscita dalla schermata): ogni accesso tardivo passa da qui. */
+function safe<T>(fn: () => T, fallback: T): T {
+  try {
+    return fn();
+  } catch {
+    return fallback;
+  }
+}
+
 function pickByLang(streams: MediaStream[], lang: string) {
   if (!lang) return undefined;
   const l = lang.toLowerCase();
@@ -85,6 +94,9 @@ export default function PlayerScreen() {
     skipped: new Set<string>(),
     hideTimer: null as ReturnType<typeof setTimeout> | null,
     readyWaiters: [] as (() => void)[],
+    // Ultimi valori noti: il report finale avviene quando il player nativo è già stato liberato.
+    pos: 0,
+    isPlaying: false,
   }).current;
 
   // ── orientamento, barre di sistema, stato globale ──
@@ -109,8 +121,8 @@ export default function PlayerScreen() {
         ItemId: it.Id,
         MediaSourceId: s.mediaSource.Id,
         PlaySessionId: s.playSessionId,
-        PositionTicks: secondsToTicks(player.currentTime || 0),
-        IsPaused: !player.playing,
+        PositionTicks: secondsToTicks(r.pos),
+        IsPaused: !r.isPlaying,
         PlayMethod: s.playMethod,
         AudioStreamIndex: s.audioIndex,
         SubtitleStreamIndex: s.subtitleIndex ?? -1,
@@ -118,7 +130,7 @@ export default function PlayerScreen() {
         ...extra,
       });
     },
-    [c, player, r],
+    [c, r],
   );
 
   const stopReporting = useCallback(() => {
@@ -212,6 +224,8 @@ export default function PlayerScreen() {
   useEffect(() => {
     return () => {
       r.loadToken++;
+      if (r.hideTimer) clearTimeout(r.hideTimer);
+      r.readyWaiters.splice(0).forEach((fn) => fn());
       stopReporting();
     };
   }, [r, stopReporting]);
@@ -219,17 +233,20 @@ export default function PlayerScreen() {
   // ── aggancio SyncPlay ──
   const syncAdapter = useMemo<SyncPlayer>(
     () => ({
-      currentTime: () => player.currentTime || 0,
-      isPlaying: () => player.playing,
-      play: () => player.play(),
-      pause: () => player.pause(),
+      currentTime: () => safe(() => player.currentTime || 0, r.pos),
+      isPlaying: () => safe(() => player.playing, false),
+      play: () => safe(() => player.play(), undefined),
+      pause: () => safe(() => player.pause(), undefined),
       seek: (s) => {
-        player.currentTime = Math.max(0, s);
+        safe(() => {
+          player.currentTime = Math.max(0, s);
+        }, undefined);
+        r.pos = Math.max(0, s);
       },
       setRate: (rate) => {
-        try {
+        safe(() => {
           player.playbackRate = rate;
-        } catch {}
+        }, undefined);
       },
       waitReady: (ms) =>
         new Promise<void>((resolve) => {
@@ -241,7 +258,7 @@ export default function PlayerScreen() {
           };
           r.readyWaiters.push(finish);
           // Un seek su file progressivo spesso non cambia stato: dopo poco lo consideriamo pronto.
-          setTimeout(() => player.status === 'readyToPlay' && finish(), 1200);
+          setTimeout(() => safe(() => player.status, 'idle') === 'readyToPlay' && finish(), 1200);
           setTimeout(finish, ms);
         }),
       stop: () => router.back(),
@@ -288,12 +305,14 @@ export default function PlayerScreen() {
   });
 
   useEventListener(player, 'playingChange', ({ isPlaying }) => {
+    r.isPlaying = isPlaying;
     setPlaying(isPlaying);
     if (r.reportedStart) report('progress', { EventName: isPlaying ? 'unpause' : 'pause' });
     if (isPlaying) scheduleHide();
   });
 
   useEventListener(player, 'timeUpdate', ({ currentTime, bufferedPosition }) => {
+    r.pos = currentTime;
     setPosition(currentTime);
     if (bufferedPosition >= 0) setBuffered(bufferedPosition);
     if (player.duration > 0 && Math.abs(player.duration - duration) > 1) setDuration(player.duration);
@@ -308,7 +327,7 @@ export default function PlayerScreen() {
 
   useEventListener(player, 'playToEnd', () => {
     setEnded(true);
-    report('stop', { PositionTicks: secondsToTicks(player.duration || 0) });
+    report('stop', { PositionTicks: secondsToTicks(safe(() => player.duration, 0) || duration) });
     r.reportedStart = false;
     if (groupMode) {
       syncplay?.onEnded();
@@ -377,6 +396,7 @@ export default function PlayerScreen() {
     const t = Math.max(0, Math.min(duration || sec, sec));
     if (groupMode && syncplay) syncplay.requestSeek(t).catch(() => {});
     else player.currentTime = t;
+    r.pos = t;
     setPosition(t);
     scheduleHide();
   };
@@ -441,7 +461,7 @@ export default function PlayerScreen() {
   function scheduleHide() {
     if (r.hideTimer) clearTimeout(r.hideTimer);
     r.hideTimer = setTimeout(() => {
-      if (player.playing) setControls(false);
+      if (safe(() => player.playing, false)) setControls(false);
     }, HIDE_AFTER_MS);
   }
   const showControls = () => {
