@@ -17,8 +17,7 @@
         "NSCameraUsageDescription": "JSync usa la fotocamera solo per leggere il codice QR di un invito a un gruppo.",
         "NSLocalNetworkUsageDescription": "JSync si collega al tuo server Jellyfin, che può trovarsi nella tua rete locale.",
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true,
-          "NSAllowsLocalNetworking": true
+          "NSAllowsArbitraryLoads": true
         },
         "UIBackgroundModes": [
           "audio"

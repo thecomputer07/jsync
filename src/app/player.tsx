@@ -723,7 +723,6 @@ export default function PlayerScreen() {
                 <View style={[styles.dot, { backgroundColor: sp.syncing ? '#FACC15' : colors.success }]} />
                 <Text style={styles.groupPillText} numberOfLines={1}>
                   {sp.group.GroupName} · {sp.group.Participants?.length ?? 1}
-                  {sp.syncing ? `  ${sp.syncing}` : ''}
                 </Text>
               </View>
             ) : null}
@@ -785,13 +784,6 @@ export default function PlayerScreen() {
               ) : null}
             </View>
           </View>
-        </View>
-      ) : null}
-
-      {/* Sincronizzazione col gruppo: sempre visibile in gruppo, anche a controlli nascosti. */}
-      {groupMode && sp.group && !error ? (
-        <View pointerEvents="none" style={[styles.syncBadge, { top: Math.max(insets.top, space.md) + (controls ? 52 : 0), right: Math.max(insets.right, space.lg) }]}>
-          <SyncBadge measuring={sp.measuring} diffMs={sp.diffMs} syncing={sp.syncing} state={sp.state} ping={syncplay?.time.ping ?? 0} />
         </View>
       ) : null}
 
@@ -859,35 +851,6 @@ export default function PlayerScreen() {
   );
 }
 
-/**
- * Quanto questo dispositivo è lontano dalla linea temporale del gruppo (stimata dal server).
- * Ogni client JSync si allinea al server, non agli altri: se qui resti a pochi ms, sei in sync con tutti.
- */
-function SyncBadge({ measuring, diffMs, syncing, state, ping }: { measuring: boolean; diffMs: number; syncing: string | null; state: string | null; ping: number }) {
-  const { t } = useT();
-  const abs = Math.abs(diffMs);
-  const color = !measuring ? 'rgba(255,255,255,0.6)' : abs < 100 ? colors.success : abs < 500 ? '#FACC15' : colors.danger;
-  const label = !measuring
-    ? state === 'Waiting'
-      ? t('player.syncWaiting')
-      : state === 'Paused'
-        ? t('player.syncPaused')
-        : t('player.syncing')
-    : diffMs > 0
-      ? t('player.behind', { ms: abs })
-      : t('player.ahead', { ms: abs });
-  return (
-    <View style={styles.syncInner}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={styles.syncText}>
-        {label}
-        {syncing ? `  ${syncing}` : ''}
-        {ping ? `  · ping ${Math.round(ping)} ms` : ''}
-      </Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   airplay: { width: 34, height: 34 },
   bubble: {
@@ -916,17 +879,6 @@ const styles = StyleSheet.create({
   adjustTrack: { width: 140, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' },
   adjustFill: { height: 5, backgroundColor: '#fff' },
   adjustText: { color: '#fff', fontWeight: '700', fontSize: 12, minWidth: 36, fontVariant: ['tabular-nums'] },
-  syncBadge: { position: 'absolute' },
-  syncInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  syncText: { color: '#fff', fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] },
   root: { flex: 1, backgroundColor: '#000' },
   center: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   waitText: { color: '#fff', marginTop: space.md, fontSize: font.md, fontWeight: '600' },
