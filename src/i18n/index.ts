@@ -64,10 +64,17 @@ const subscribe = (fn: () => void) => {
   };
 };
 
-/** Nei componenti: rende di nuovo quando cambia la lingua. */
+const bound: Partial<Record<Lang, typeof t>> = {};
+
+/**
+ * Nei componenti: rende di nuovo quando cambia la lingua.
+ * La `t` restituita cambia identità con la lingua: col React Compiler una funzione sempre uguale
+ * farebbe riusare i testi già calcolati (es. i titoli delle tab restavano nella lingua vecchia).
+ */
 export function useT() {
   const lang = useSyncExternalStore(subscribe, getLanguage, getLanguage);
-  return { t, lang };
+  const tl = (bound[lang] ??= ((key, vars) => t(key, vars)) as typeof t);
+  return { t: tl, lang };
 }
 
 /** Locale per date/numeri. */

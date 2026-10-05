@@ -426,6 +426,12 @@ export default function PlayerScreen() {
 
   const seekTo = (sec: number) => {
     const t = Math.max(0, Math.min(duration || sec, sec));
+    // tornando indietro dopo la fine si riprende a guardare
+    if (ended && t < (duration || Infinity) - 1) {
+      setEnded(false);
+      setCountdown(null);
+      if (!groupMode) safe(() => player.play(), undefined);
+    }
     if (groupMode && syncplay) syncplay.requestSeek(t).catch(() => {});
     else player.currentTime = t;
     r.pos = t;
