@@ -611,6 +611,13 @@ export default function PlayerScreen() {
         </View>
       ) : null}
 
+      {/* Sincronizzazione col gruppo: sempre visibile in gruppo, anche a controlli nascosti. */}
+      {groupMode && sp.group && !error ? (
+        <View pointerEvents="none" style={[styles.syncBadge, { top: Math.max(insets.top, space.md) + (controls ? 52 : 0), right: Math.max(insets.right, space.lg) }]}>
+          <SyncBadge measuring={sp.measuring} diffMs={sp.diffMs} syncing={sp.syncing} state={sp.state} ping={syncplay?.time.ping ?? 0} />
+        </View>
+      ) : null}
+
       {/* Salta intro/riassunto: visibile anche a controlli nascosti, come nelle app di streaming. */}
       {activeSegment && !error ? (
         <Focusable
@@ -665,7 +672,44 @@ export default function PlayerScreen() {
   );
 }
 
+/**
+ * Quanto questo dispositivo è lontano dalla linea temporale del gruppo (stimata dal server).
+ * Ogni client Rave si allinea al server, non agli altri: se qui resti a pochi ms, sei in sync con tutti.
+ */
+function SyncBadge({ measuring, diffMs, syncing, state, ping }: { measuring: boolean; diffMs: number; syncing: string | null; state: string | null; ping: number }) {
+  const abs = Math.abs(diffMs);
+  const color = !measuring ? 'rgba(255,255,255,0.6)' : abs < 100 ? colors.success : abs < 500 ? '#FACC15' : colors.danger;
+  const label = !measuring
+    ? state === 'Waiting'
+      ? 'in attesa'
+      : state === 'Paused'
+        ? 'in pausa'
+        : 'sync…'
+    : `${diffMs > 0 ? 'indietro' : 'avanti'} ${abs} ms`;
+  return (
+    <View style={styles.syncInner}>
+      <View style={[styles.dot, { backgroundColor: color }]} />
+      <Text style={styles.syncText}>
+        {label}
+        {syncing ? `  ${syncing}` : ''}
+        {ping ? `  · ping ${Math.round(ping)} ms` : ''}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  syncBadge: { position: 'absolute' },
+  syncInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  syncText: { color: '#fff', fontSize: 11, fontWeight: '700', fontVariant: ['tabular-nums'] },
   root: { flex: 1, backgroundColor: '#000' },
   center: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   waitText: { color: '#fff', marginTop: space.md, fontSize: font.md, fontWeight: '600' },

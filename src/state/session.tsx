@@ -223,6 +223,7 @@ const EMPTY = {
   following: false,
   syncing: null,
   diffMs: 0,
+  measuring: false,
 } as const;
 const noopSub = () => () => {};
 

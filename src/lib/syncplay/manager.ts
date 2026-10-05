@@ -35,6 +35,8 @@ export interface SyncPlaySnapshot {
   following: boolean;
   syncing: string | null; // es. "×1.04" mentre corregge la deriva
   diffMs: number;
+  /** true quando diffMs è una misura in corso (si sta riproducendo in gruppo). */
+  measuring: boolean;
 }
 
 type Notice = { text: string; kind: 'info' | 'error' };
@@ -91,6 +93,7 @@ export class SyncPlayManager {
     following: false,
     syncing: null,
     diffMs: 0,
+    measuring: false,
   };
 
   constructor(
@@ -293,7 +296,7 @@ export class SyncPlayManager {
     const now = Date.now();
     if (now - this.lastSyncCheck < SYNC_CHECK_MS) return;
     this.lastSyncCheck = now;
-    if (Math.abs(diff - this.snap.diffMs) > 20) this.set({ diffMs: Math.round(diff) });
+    if (!this.snap.measuring || Math.abs(diff - this.snap.diffMs) > 5) this.set({ diffMs: Math.round(diff), measuring: true });
     if (!this.syncEnabled) return;
 
     const abs = Math.abs(diff);
@@ -517,6 +520,7 @@ export class SyncPlayManager {
   }
 
   private schedulePause(cmd: ParsedCommand) {
+    if (this.snap.measuring) this.set({ measuring: false });
     this.scheduleAt(cmd, () => {
       const p = this.player;
       if (!p) return;
@@ -526,6 +530,7 @@ export class SyncPlayManager {
   }
 
   private scheduleSeek(cmd: ParsedCommand) {
+    if (this.snap.measuring) this.set({ measuring: false });
     this.scheduleAt(cmd, async () => {
       const p = this.player;
       if (!p) return;
@@ -558,6 +563,6 @@ export class SyncPlayManager {
     this.queue = null;
     this.lastCommand = null;
     this.time.stop();
-    this.set({ group: null, state: null, current: null, following: false, syncing: null, diffMs: 0 });
+    this.set({ group: null, state: null, current: null, following: false, syncing: null, diffMs: 0, measuring: false });
   }
 }
