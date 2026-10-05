@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { Tabs } from 'expo-router/js-tabs';
-import { View, type ColorValue } from 'react-native';
+import { Platform, View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSyncPlayState } from '@/state/session';
 import { colors, tv } from '@/theme';
@@ -29,9 +31,19 @@ function GroupIcon({ color, size }: { color: ColorValue; size: number }) {
   );
 }
 
+// Barra alta e bersagli grandi: ogni tab occupa tutta la sua colonna, ben oltre i 44 pt minimi.
+const BAR_HEIGHT = tv ? 90 : 68;
+const ICON_SIZE = tv ? 30 : 27;
+
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
+      screenListeners={{
+        tabPress: () => {
+          if (Platform.OS !== 'web' && !tv) Haptics.selectionAsync().catch(() => {});
+        },
+      }}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.text,
@@ -39,26 +51,30 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: 'rgba(7,7,10,0.97)',
           borderTopColor: colors.border,
-          height: tv ? 90 : undefined,
+          height: BAR_HEIGHT + insets.bottom,
+          paddingTop: 8,
+          paddingBottom: insets.bottom + 6,
         },
-        tabBarLabelStyle: { fontWeight: '700', fontSize: tv ? 16 : 11 },
+        tabBarItemStyle: { paddingVertical: 4 },
+        tabBarIconStyle: { marginBottom: 2 },
+        tabBarLabelStyle: { fontWeight: '700', fontSize: tv ? 16 : 12 },
         sceneStyle: { backgroundColor: colors.bg },
       }}>
       <Tabs.Screen
         name="home"
-        options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} /> }}
+        options={{ title: 'Home', tabBarIcon: ({ color }) => <Ionicons name="home" color={color} size={ICON_SIZE} /> }}
       />
       <Tabs.Screen
         name="search"
-        options={{ title: 'Cerca', tabBarIcon: ({ color, size }) => <Ionicons name="search" color={color} size={size} /> }}
+        options={{ title: 'Cerca', tabBarIcon: ({ color }) => <Ionicons name="search" color={color} size={ICON_SIZE} /> }}
       />
       <Tabs.Screen
         name="groups"
-        options={{ title: 'Gruppi', tabBarIcon: ({ color, size }) => <GroupIcon color={color} size={size} /> }}
+        options={{ title: 'Gruppi', tabBarIcon: ({ color }) => <GroupIcon color={color} size={ICON_SIZE} /> }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: 'Impostazioni', tabBarIcon: ({ color, size }) => <Ionicons name="settings-sharp" color={color} size={size} /> }}
+        options={{ title: 'Impostazioni', tabBarIcon: ({ color }) => <Ionicons name="settings-sharp" color={color} size={ICON_SIZE} /> }}
       />
     </Tabs>
   );
