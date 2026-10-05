@@ -6,7 +6,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, BackHandler, Platform, Pressable, StyleSheet, Text, View, useTVEventHandler } from 'react-native';
+import { ActivityIndicator, BackHandler, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Focusable } from '@/components/focusable';
@@ -19,6 +19,7 @@ import { resolveStream, type ResolvedStream } from '@/lib/jellyfin/playback';
 import type { BaseItem, MediaSegment, MediaStream } from '@/lib/jellyfin/types';
 import { lockAppOrientation, lockPlayerOrientation } from '@/lib/orientation';
 import { playerState } from '@/lib/player-state';
+import { useTVEventHandler } from '@/lib/tv';
 import type { SyncPlayer } from '@/lib/syncplay/manager';
 import { useClient, useSession, useSyncPlayState } from '@/state/session';
 import { colors, font, radius, space, tv } from '@/theme';

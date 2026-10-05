@@ -20,7 +20,9 @@
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true
         },
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -32,7 +34,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.CAMERA"]
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "output": "static",
@@ -83,6 +87,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "db26d0c9-96e3-469b-ac13-e8222ba8ab45"
+      }
+    },
+    "owner": "thecomputer07"
   }
 }

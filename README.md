@@ -34,8 +34,8 @@ Musica, libri, audiolibri, foto e TV in diretta sono esclusi apposta: si vedono 
 ## Avvio in sviluppo
 
 ```bash
-npm install          # .npmrc ha legacy-peer-deps (serve per il fork react-native-tvos)
-npx expo start       # inquadra il QR con Expo Go sul telefono
+npm install
+npx expo start --tunnel --go --port 8090   # poi Expo Go → Development servers (stesso account Expo)
 ```
 
 Comandi utili: `npm run typecheck`, `npx eslint src`, `npx expo-doctor`.
@@ -49,8 +49,10 @@ npx eas-cli@latest build -p android --profile preview     # APK da installare a 
 npx eas-cli@latest build -p android --profile tv          # APK per Android TV (EXPO_TV=1)
 ```
 
-In locale per la TV: `npm run tv:prebuild && npm run tv:android`. Passando fra build TV e telefono
-serve sempre `prebuild --clean`.
+Telefoni ed Expo Go usano React Native standard. Solo le build TV passano al fork `react-native-tvos`:
+lo fa `scripts/use-tvos.js`, che EAS esegue prima dell'installazione (`eas-build-pre-install`) quando
+`EXPO_TV=1`. In locale: `npm run tv:prebuild && npm run tv:android`, poi `git checkout package.json`
+per tornare al React Native standard.
 
 ## Prima di pubblicare sugli store
 
