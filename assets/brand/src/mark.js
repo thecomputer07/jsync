@@ -45,10 +45,23 @@ function markSVG({ s = 1, mono = null, id = 'm', playColor = '#fff' } = {}) {
   const body = `
     <path d="M${stemX},${top} L${stemX},${cy} A${R},${R} 0 0 1 ${leftX},${cy}" fill="none" stroke="${fill}" stroke-width="${sw}" stroke-linecap="round"/>
     <path d="M${leftX - arrowHalf},${cy + 6} L${leftX + arrowHalf},${cy + 6} L${leftX},${arrowTip} Z" fill="${fill}" stroke="${fill}" stroke-width="30" stroke-linejoin="round"/>
-    ${mono ? '' : `<path d="${roundedPlay(cx + 6 - (126 * 0.866) / 6, cy - 2, 126, 17)}" fill="${playFill}"/>`}`;
+    ${mono ? '' : `<path d="${playPath(cx, cy, R, sw, leftX, arrowHalf)}" fill="${playFill}"/>`}`;
   const defs = `<defs><linearGradient id="${id}g" gradientUnits="userSpaceOnUse" x1="250" y1="200" x2="780" y2="820">
       <stop offset="0" stop-color="${V1}"/><stop offset="1" stop-color="${V2}"/></linearGradient></defs>`;
   return `${defs}<g transform="translate(512 512) scale(${s}) translate(-512 -512)">${body}</g>`;
+}
+
+/**
+ * Play nell'occhiello della J: in orizzontale a metà fra la base della freccia e la gamba
+ * (stessa aria ai due lati), in verticale all'altezza del centro della curva.
+ */
+function playPath(cx, cy, R, sw, leftX, arrowHalf) {
+  const h = 94;
+  const w = h * 0.866;
+  const arrowRight = leftX + arrowHalf + 15; // base della freccia + metà del bordo arrotondato
+  const stemInner = cx + R - sw / 2;
+  const boxCenterX = (arrowRight + stemInner) / 2;
+  return roundedPlay(boxCenterX - w / 2 + w / 3, cy + 2, h, 13);
 }
 
 function backgroundSVG(id = 'b') {
