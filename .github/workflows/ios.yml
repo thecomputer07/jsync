@@ -17,6 +17,11 @@ on:
         description: Invia a TestFlight al termine
         default: false
         type: boolean
+      mac:
+        description: Mac di GitHub (se macos-26 resta in coda, prova macos-26-intel)
+        default: macos-26
+        type: choice
+        options: [macos-26, macos-26-intel]
 
 concurrency:
   group: ios-${{ github.ref }}
@@ -24,7 +29,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: ${{ inputs.mac }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
