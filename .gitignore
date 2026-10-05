@@ -41,3 +41,7 @@ example
 # generated native folders
 /ios
 /android
+
+# Native generati da prebuild (CNG): si rigenerano, non si versionano
+/ios
+/android
