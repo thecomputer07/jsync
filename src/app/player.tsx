@@ -3,11 +3,11 @@ import { useEventListener } from 'expo';
 import * as Brightness from 'expo-brightness';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as NavigationBar from 'expo-navigation-bar';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { VideoAirPlayButton, VideoView, useVideoPlayer } from 'expo-video';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, BackHandler, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Focusable } from '@/components/focusable';
@@ -22,7 +22,7 @@ import { useT } from '@/i18n';
 import { itemSubtitle, secondsToTicks, ticksToSeconds } from '@/lib/jellyfin/client';
 import { resolveStream, type ResolvedStream } from '@/lib/jellyfin/playback';
 import type { BaseItem, MediaSegment, MediaStream, TrickplayInfo } from '@/lib/jellyfin/types';
-import { lockAppOrientation, lockPlayerOrientation } from '@/lib/orientation';
+import { landscapeSide, lockAppOrientation, unlockPlayerOrientation } from '@/lib/orientation';
 import { playerState } from '@/lib/player-state';
 import { useTVEventHandler } from '@/lib/tv';
 import type { SyncPlayer } from '@/lib/syncplay/manager';
@@ -76,6 +76,9 @@ export default function PlayerScreen() {
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
   const [controls, setControls] = useState(true);
+  const [rotationLocked, setRotationLocked] = useState(false);
+  const navigation = useNavigation();
+  const win = useWindowDimensions();
   const [tracksOpen, setTracksOpen] = useState(false);
   const [nextEp, setNextEp] = useState<BaseItem | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -124,7 +127,7 @@ export default function PlayerScreen() {
   // ── orientamento, barre di sistema, stato globale ──
   useEffect(() => {
     playerState.mounted = true;
-    lockPlayerOrientation();
+    unlockPlayerOrientation();
     if (Platform.OS === 'android' && !tv) NavigationBar.setVisibilityAsync('hidden').catch(() => {});
     Brightness.getBrightnessAsync()
       .then((b) => {
@@ -633,6 +636,18 @@ export default function PlayerScreen() {
 
   const close = () => router.back();
 
+  // In verticale basta guardare le dimensioni; in orizzontale il lato lo dicono solo i sensori.
+  const toggleRotationLock = async () => {
+    scheduleHide();
+    if (rotationLocked) {
+      navigation.setOptions({ orientation: 'default' });
+      setRotationLocked(false);
+      return;
+    }
+    setRotationLocked(true);
+    navigation.setOptions({ orientation: win.width > win.height ? await landscapeSide() : 'portrait_up' });
+  };
+
   const waiting = groupMode && sp.state === 'Waiting';
   const title = item ? (item.Type === 'Episode' ? item.Name : item.Name) : '';
   const subtitle = item?.Type === 'Episode' ? itemSubtitle(item) : item?.ProductionYear ? String(item.ProductionYear) : '';
@@ -730,6 +745,15 @@ export default function PlayerScreen() {
               <VideoAirPlayButton style={styles.airplay} tint="#fff" activeTint={colors.accent} />
             ) : null}
             {castAvailable && !groupMode ? <CastButton /> : null}
+            {!tv ? (
+              <Focusable
+                onPress={toggleRotationLock}
+                style={styles.iconBtn}
+                zoom={false}
+                accessibilityLabel={rotationLocked ? t('player.unlockRotation') : t('player.lockRotation')}>
+                <Ionicons name={rotationLocked ? 'lock-closed' : 'lock-open-outline'} size={22} color={rotationLocked ? colors.accent : '#fff'} />
+              </Focusable>
+            ) : null}
             {!tv && !groupMode ? (
               <Focusable onPress={startPip} style={styles.iconBtn} zoom={false} accessibilityLabel={t('player.pip')}>
                 <Ionicons name="albums-outline" size={23} color="#fff" />

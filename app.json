@@ -69,6 +69,12 @@
       ],
       "expo-screen-orientation",
       [
+        "expo-sensors",
+        {
+          "motionPermission": "JSync usa i sensori di movimento solo per bloccare il video sul lato in cui tieni il telefono."
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {

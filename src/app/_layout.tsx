@@ -68,7 +68,7 @@ function RootStack() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="item/[id]" />
           <Stack.Screen name="library/[id]" />
-          <Stack.Screen name="player" options={{ animation: 'fade', gestureEnabled: false }} />
+          <Stack.Screen name="player" options={{ animation: 'fade', gestureEnabled: false, orientation: 'default' }} />
           <Stack.Screen name="scan" options={{ presentation: 'modal' }} />
         </Stack.Protected>
         <Stack.Screen name="index" />

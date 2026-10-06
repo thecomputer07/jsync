@@ -196,6 +196,8 @@ export const it = {
     brightness: 'Luminosità',
     volume: 'Volume',
     pip: 'Picture in picture',
+    lockRotation: 'Blocca rotazione',
+    unlockRotation: 'Sblocca rotazione',
     pipUnavailable: 'Il picture in picture è disponibile nell’app installata (non in Expo Go).',
     casting: 'In riproduzione su {device}',
     castStop: 'Interrompi trasmissione',

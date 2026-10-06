@@ -198,6 +198,8 @@ export const en: Dict = {
     brightness: 'Brightness',
     volume: 'Volume',
     pip: 'Picture in picture',
+    lockRotation: 'Lock rotation',
+    unlockRotation: 'Unlock rotation',
     pipUnavailable: 'Picture in picture is available in the installed app (not in Expo Go).',
     casting: 'Playing on {device}',
     castStop: 'Stop casting',
